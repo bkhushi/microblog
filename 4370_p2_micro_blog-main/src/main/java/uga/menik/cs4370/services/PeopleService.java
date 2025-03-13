@@ -5,8 +5,16 @@ This is a project developed by Dr. Menik to give the students an opportunity to 
 */
 package uga.menik.cs4370.services;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.sql.Connection;
 import java.util.List;
 
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import uga.menik.cs4370.models.FollowableUser;
@@ -23,6 +31,8 @@ public class PeopleService {
      * are followable. The list should not contain the user 
      * with id userIdToExclude.
      */
+     @Autowired
+    private DataSource dataSource;
     public List<FollowableUser> getFollowableUsers(String userIdToExclude) {
         // Write an SQL query to find the users that are not the current user.
 
@@ -37,7 +47,42 @@ public class PeopleService {
         // how to create a list of FollowableUsers.
 
         // Replace the following line and return the list you created.
-        return Utility.createSampleFollowableUserList();
-    }
+        List<FollowableUser> followableUsers = new ArrayList<>();
 
+        // Simplified query focusing on essential fields
+        String query = "SELECT u.userId, u.username, u.firstName, u.lastName " +
+                "FROM user u " +
+                "WHERE u.userId != ?";
+
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, userIdToExclude);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String userId = rs.getString("userId");
+                    String firstName = rs.getString("firstName");
+                    String lastName = rs.getString("lastName");
+
+                    // Create FollowableUser with basic info first
+                    FollowableUser user = new FollowableUser(
+                            userId,
+                            firstName,
+                            lastName,
+                            false, // Default to not followed
+                            "Never" // Default last active date
+                    );
+
+                    followableUsers.add(user);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace(); // Log the actual error
+            throw new RuntimeException("Error fetching followable users: " + e.getMessage());
+        }
+
+        return followableUsers;
+    }
 }
+
