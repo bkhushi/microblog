@@ -25,8 +25,6 @@ import uga.menik.cs4370.models.Post;
 import uga.menik.cs4370.services.UserService;
 
 import java.sql.Connection;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 /**
  * Handles /bookmarks and its sub URLs.
