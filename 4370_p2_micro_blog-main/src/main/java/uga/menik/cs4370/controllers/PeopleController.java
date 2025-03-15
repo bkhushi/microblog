@@ -20,7 +20,7 @@ import org.springframework.web.servlet.ModelAndView;
 import uga.menik.cs4370.models.FollowableUser;
 import uga.menik.cs4370.services.PeopleService;
 import uga.menik.cs4370.services.UserService;
-import uga.menik.cs4370.utility.Utility;
+
 
 /**
  * Handles /people URL and its sub URL paths.
