@@ -5,6 +5,7 @@ This is a project developed by Dr. Menik to give the students an opportunity to 
 */
 package uga.menik.cs4370.controllers;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,9 +23,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.cs4370.models.Post;
+import uga.menik.cs4370.models.User;
 import uga.menik.cs4370.services.UserService;
-
-import java.sql.Connection;
 
 /**
  * Handles /bookmarks and its sub URLs.
@@ -115,7 +115,7 @@ public class BookmarksController {
                         String content = rs.getString("content");
                         String postDate = rs.getString("postDate");
 
-                        User user = userService.getUserById(userId); /** Need to fix here! */
+                        User user = getUserById(userId);
 
                         int heartsCount = rs.getInt("heartsCount");
                         int commentsCount = rs.getInt("commentsCount");
@@ -132,6 +132,33 @@ public class BookmarksController {
         }
 
         return postsNotByUser;
+    }
+
+    private User getUserById(String userId) {
+
+        final String sql = "select * from users where userId == ?";
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            // Following line replaces the first place holder with username.
+            pstmt.setString(1, userId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    return new User(
+                        userId,
+                        rs.getString("firstName"),
+                        rs.getString("lastName"),
+                        rs.getString("profileImagePath")
+                    );
+                    
+                }
+            }
+        } catch(SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
     
 }

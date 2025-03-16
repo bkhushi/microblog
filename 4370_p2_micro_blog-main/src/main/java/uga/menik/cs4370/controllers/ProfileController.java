@@ -14,6 +14,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.sql.DataSource;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,10 +24,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.cs4370.models.Post;
+import uga.menik.cs4370.models.User;
 import uga.menik.cs4370.services.UserService;
-import uga.menik.cs4370.utility.Utility;
-
-import javax.sql.DataSource;
 
 /**
  * Handles /profile URL and its sub URLs.
@@ -118,7 +118,7 @@ public class ProfileController {
                         String content = rs.getString("content");
                         String postDate = rs.getString("postDate");
 
-                        User user = userService.getUserById(userId); /** Need to fix here! */
+                        User user = getUserById(userId); 
 
                         int heartsCount = rs.getInt("heartsCount");
                         int commentsCount = rs.getInt("commentsCount");
@@ -135,6 +135,33 @@ public class ProfileController {
         }
 
         return postsByUser;
+    }
+
+    private User getUserById(String userId) {
+
+        final String sql = "select * from users where userId == ?";
+        try (Connection conn = dataSource.getConnection();
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            // Following line replaces the first place holder with username.
+            pstmt.setString(1, userId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    return new User(
+                        userId,
+                        rs.getString("firstName"),
+                        rs.getString("lastName"),
+                        rs.getString("profileImagePath")
+                    );
+                    
+                }
+            }
+        } catch(SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
     
 }
