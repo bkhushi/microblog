@@ -9,6 +9,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -94,11 +95,22 @@ public class PeopleController {
 
         // Redirect the user if the comment adding is a success.
         // return "redirect:/people";
+        try {
+            String currentUserId = userService.getLoggedInUser().getUserId();
+            if (isFollow) {
+                peopleService.followUser(currentUserId, userId);
+            } else {
+                // Unfollow the user.
+                peopleService.unfollowUser(currentUserId, userId);
+            }
 
-        // Redirect the user with an error message if there was an error.
-        String message = URLEncoder.encode("Failed to (un)follow the user. Please try again.",
-                StandardCharsets.UTF_8);
-        return "redirect:/people?error=" + message;
+            return "redirect:/people";
+        } catch (Exception e) {
+            // Redirect the user with an error message if there was an error.
+            String message = URLEncoder.encode("Failed to (un)follow the user. Please try again.",
+                    StandardCharsets.UTF_8);
+            return "redirect:/people?error=" + message;
+        }
     }
 
 }

@@ -17,3 +17,12 @@ create table if not exists user (
     constraint firstName_min_length check (char_length(trim(firstName)) >= 2),
     constraint lastName_min_length check (char_length(trim(lastName)) >= 2)
 );
+
+CREATE TABLE follow (
+    follower_id INT,
+    following_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (follower_id, following_id),
+    FOREIGN KEY (follower_id) REFERENCES user(userId),
+    FOREIGN KEY (following_id) REFERENCES user(userId)
+);
