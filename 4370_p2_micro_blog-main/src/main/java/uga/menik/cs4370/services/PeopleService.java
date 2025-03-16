@@ -33,6 +33,7 @@ public class PeopleService {
      */
      @Autowired
     private DataSource dataSource;
+
     public List<FollowableUser> getFollowableUsers(String userIdToExclude) {
         // Write an SQL query to find the users that are not the current user.
 
@@ -49,28 +50,30 @@ public class PeopleService {
         // Replace the following line and return the list you created.
         List<FollowableUser> followableUsers = new ArrayList<>();
 
-        // Simplified query focusing on essential fields
-        String query = "SELECT u.userId, u.username, u.firstName, u.lastName " +
+        String query = "SELECT u.userId, u.username, u.firstName, u.lastName, " +
+                "CASE WHEN f.follower_id IS NOT NULL THEN true ELSE false END as is_followed " +
                 "FROM user u " +
+                "LEFT JOIN follow f ON f.following_id = u.userId AND f.follower_id = ? " +
                 "WHERE u.userId != ?";
 
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(query)) {
 
-            stmt.setString(1, userIdToExclude);
+            stmt.setString(1, userIdToExclude); // For checking follow status
+            stmt.setString(2, userIdToExclude); // For excluding current user
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     String userId = rs.getString("userId");
                     String firstName = rs.getString("firstName");
                     String lastName = rs.getString("lastName");
+                    boolean isFollowed = rs.getBoolean("is_followed");
 
-                    // Create FollowableUser with basic info first
                     FollowableUser user = new FollowableUser(
                             userId,
                             firstName,
                             lastName,
-                            false, // Default to not followed
+                            isFollowed, // Use the actual follow status
                             "Never" // Default last active date
                     );
 
@@ -78,11 +81,41 @@ public class PeopleService {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace(); // Log the actual error
+            e.printStackTrace();
             throw new RuntimeException("Error fetching followable users: " + e.getMessage());
         }
 
         return followableUsers;
+    }
+    
+
+
+    public void followUser(String followerId, String followingId) {
+        String query = "INSERT INTO follow(follower_id, following_id) VALUES (?, ?)";
+
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, followerId);
+            stmt.setString(2, followingId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to follow user", e);
+        }
+    }
+
+    public void unfollowUser(String followerId, String folowwingId) {
+        String query = "DELETE FROM follow WHERE follower_id = ? AND following_id = ?";
+
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, followerId);
+            stmt.setString(2, folowwingId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to unfollow user", e);
+        }
     }
 }
 
