@@ -118,7 +118,7 @@ public class ProfileController {
                         String content = rs.getString("content");
                         String postDate = rs.getString("postDate");
 
-                        User user = getUserById(userId); 
+                        User user = getUserById(userId); /** need to join tables in sql */
 
                         int heartsCount = rs.getInt("heartsCount");
                         int commentsCount = rs.getInt("commentsCount");
