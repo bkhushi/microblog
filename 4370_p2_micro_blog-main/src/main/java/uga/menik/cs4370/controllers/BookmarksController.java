@@ -61,24 +61,33 @@ public class BookmarksController {
         String loggedInUserId = userService.getLoggedInUser().getUserId();
 
         List<Post> postsToCheck = getPostsNotByCurrentUser(loggedInUserId);
-        List<Post> bookmarkedPosts = new ArrayList<>();
+        if (postsToCheck.isEmpty()) {
+            // Enable the following line if you want to show no content message.
+            // Do that if your content list is empty.
+            mv.addObject("isNoContent", true);
+        } else {
+            List<Post> bookmarkedPosts = new ArrayList<>();
 
-        for (Post p : postsToCheck) {
-            if (p.isBookmarked()) {
-                bookmarkedPosts.add(p);
+            for (Post p : postsToCheck) {
+                if (p.isBookmarked()) {
+                    bookmarkedPosts.add(p);
+                }
+            }
+
+            if (bookmarkedPosts.isEmpty()) {
+                mv.addObject("isNoContent", true);
+            } else {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a");
+    
+                bookmarkedPosts.sort((p1, p2) -> 
+                    LocalDateTime.parse(p2.getPostDate(), formatter)
+                                .compareTo(LocalDateTime.parse(p1.getPostDate(), formatter))
+                );
+                /** final sorted list should go where "posts" is! */
+                mv.addObject("posts", bookmarkedPosts);
             }
         }
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a");
-
-        bookmarkedPosts.sort((p1, p2) -> 
-            LocalDateTime.parse(p2.getPostDate(), formatter)
-                        .compareTo(LocalDateTime.parse(p1.getPostDate(), formatter))
-        );
-
-        /** final sorted list should go where "posts" is! */
-        mv.addObject("posts", bookmarkedPosts);
-
+        
 
         // Following line populates sample data.
         // You should replace it with actual data from the database.
@@ -90,9 +99,7 @@ public class BookmarksController {
         String errorMessage = "Some error occured!";
         mv.addObject("errorMessage", errorMessage);
 
-        // Enable the following line if you want to show no content message.
-        // Do that if your content list is empty.
-         mv.addObject("isNoContent", true);
+        
 
         return mv;
     }
