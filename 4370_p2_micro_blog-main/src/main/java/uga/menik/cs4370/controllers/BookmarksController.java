@@ -5,9 +5,6 @@ This is a project developed by Dr. Menik to give the students an opportunity to 
 */
 package uga.menik.cs4370.controllers;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,12 +51,13 @@ public class BookmarksController {
         /** Modified code starts here */
         String loggedInUserId = userService.getLoggedInUser().getUserId();
 
-        List<Post> postsToCheck = bookmarkService.getPostsNotByCurrentUser(loggedInUserId);
-        if (postsToCheck.isEmpty()) {
+        List<Post> posts = bookmarkService.getBookmarkedPosts(loggedInUserId);
+        if (posts.isEmpty()) {
             // Enable the following line if you want to show no content message.
             // Do that if your content list is empty.
             mv.addObject("isNoContent", true);
         } else {
+            /**
             List<Post> bookmarkedPosts = new ArrayList<>();
 
             for (Post p : postsToCheck) {
@@ -77,9 +75,10 @@ public class BookmarksController {
                     LocalDateTime.parse(p2.getPostDate(), formatter)
                                 .compareTo(LocalDateTime.parse(p1.getPostDate(), formatter))
                 );
-                /** final sorted list should go where "posts" is! */
-                mv.addObject("posts", bookmarkedPosts);
+                
             }
+            */
+            mv.addObject("posts", posts);
         }
         
 
