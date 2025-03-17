@@ -6,8 +6,6 @@ This is a project developed by Dr. Menik to give the students an opportunity to 
 package uga.menik.cs4370.controllers;
 
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,12 +73,6 @@ public class ProfileController {
             // Do that if your content list is empty.
             mv.addObject("isNoContent", true);
         } else {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a");
-
-            posts.sort((p1, p2) -> 
-                LocalDateTime.parse(p2.getPostDate(), formatter)
-                            .compareTo(LocalDateTime.parse(p1.getPostDate(), formatter))
-            );
             mv.addObject("posts", posts);
         }
     

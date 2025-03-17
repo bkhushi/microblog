@@ -57,27 +57,6 @@ public class BookmarksController {
             // Do that if your content list is empty.
             mv.addObject("isNoContent", true);
         } else {
-            /**
-            List<Post> bookmarkedPosts = new ArrayList<>();
-
-            for (Post p : postsToCheck) {
-                if (p.isBookmarked()) {
-                    bookmarkedPosts.add(p);
-                }
-            }
-
-            if (bookmarkedPosts.isEmpty()) {
-                mv.addObject("isNoContent", true);
-            } else {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a");
-    
-                bookmarkedPosts.sort((p1, p2) -> 
-                    LocalDateTime.parse(p2.getPostDate(), formatter)
-                                .compareTo(LocalDateTime.parse(p1.getPostDate(), formatter))
-                );
-                
-            }
-            */
             mv.addObject("posts", posts);
         }
         

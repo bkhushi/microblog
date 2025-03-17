@@ -24,10 +24,10 @@ public class BookmarkService {
         List<Post> posts = new ArrayList<>();
 
         final String sql = "SELECT DISTINCT p.*, u.username, u.firstName, u.lastName " +
-                   "FROM post p " +
-                   "JOIN user u ON p.user_id = u.userId " +
-                   "WHERE p.isBookmarked = true AND p.user_id != ?" +
-                   "ORDER BY p.created_at DESC";
+                "FROM post p " +
+                "JOIN user u ON p.user_id = u.userId " +
+                "WHERE p.isBookmarked = true AND p.user_id != ?" +
+                "ORDER BY p.created_at DESC";
 
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
