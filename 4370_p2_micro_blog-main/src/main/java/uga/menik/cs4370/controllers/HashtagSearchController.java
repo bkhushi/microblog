@@ -5,8 +5,11 @@ This is a project developed by Dr. Menik to give the students an opportunity to 
 */
 package uga.menik.cs4370.controllers;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.cs4370.models.Post;
+import uga.menik.cs4370.services.HashtagService;
 import uga.menik.cs4370.utility.Utility;
 
 /**
@@ -24,6 +28,12 @@ import uga.menik.cs4370.utility.Utility;
 @RequestMapping("/hashtagsearch")
 public class HashtagSearchController {
 
+    private final HashtagService hashtagService;
+
+    @Autowired
+    public HashtagSearchController(HashtagService hashtagService) {
+        this.hashtagService = hashtagService;
+    }
     /**
      * This function handles the /hashtagsearch URL itself.
      * This URL can process a request parameter with name hashtags.
@@ -40,9 +50,24 @@ public class HashtagSearchController {
 
         // Following line populates sample data.
         // You should replace it with actual data from the database.
-        List<Post> posts = Utility.createSamplePostsListWithoutComments();
-        mv.addObject("posts", posts);
+        try {
+            // Parse hashtags from input string
+            List<String> hashtagList = Arrays.asList(hashtags.split("\\s+"))
+                .stream()
+                .map(tag -> tag.startsWith("#") ? tag.substring(1) : tag)
+                .collect(Collectors.toList());
 
+            // Get matching posts
+            List<Post> posts = hashtagService.getPostsByHashtags(hashtagList);
+            mv.addObject("posts", posts);
+
+            if (posts.isEmpty()) {
+                mv.addObject("isNoContent", true);
+            }
+        } catch (Exception e) {
+            mv.addObject("errorMessage", "Error searching hashtags: " + e.getMessage());
+        }
+        
         // If an error occured, you can set the following property with the
         // error message to show the error message to the user.
         // String errorMessage = "Some error occured!";
