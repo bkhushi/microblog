@@ -16,24 +16,24 @@ import uga.menik.cs4370.models.Post;
 import uga.menik.cs4370.models.User;
 
 @Service
-public class BookmarkService {
+public class ProfileService {
+
     @Autowired
     private DataSource dataSource;
 
-    public List<Post> getPostsNotByCurrentUser(String userIdToExclude) {
-        List<Post> postsNotByUser = new ArrayList<>();
+    public List<Post> getPostsBySpecificUser(String userId) {
+        List<Post> postsByUser = new ArrayList<>();
 
-        final String sql = "select * from post where userId != ?";
+        final String sql = "select * from post where userId == ?";
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             // Following line replaces the first place holder with username.
-            pstmt.setString(1, userIdToExclude);
+            pstmt.setString(1, userId);
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    String userId = rs.getString("userId");
-                    if (!userId.equals(userIdToExclude)) {
+                    if (userId.equals(userId)) {
                         String postId = rs.getString("postId");
                         String content = rs.getString("content");
                         String postDate = rs.getString("postDate");
@@ -46,15 +46,15 @@ public class BookmarkService {
                         boolean isBookmarked = rs.getBoolean("isBookmarked");
 
                         Post posts = new Post(postId, content, postDate, user, heartsCount, commentsCount, isHearted, isBookmarked);
-                        postsNotByUser.add(posts);
+                        postsByUser.add(posts);
                     }
                 }
             }
         } catch(SQLException e) {
-            throw new RuntimeException("Error fetching posts", e);
+            throw new RuntimeException("Error fetching posts by profile", e);
         }
 
-        return postsNotByUser;
+        return postsByUser;
     }
 
     private User getUserById(String userId) {
