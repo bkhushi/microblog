@@ -5,16 +5,10 @@ This is a project developed by Dr. Menik to give the students an opportunity to 
 */
 package uga.menik.cs4370.controllers;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -23,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.cs4370.models.Post;
-import uga.menik.cs4370.models.User;
+import uga.menik.cs4370.services.BookmarkService;
 import uga.menik.cs4370.services.UserService;
 
 /**
@@ -38,12 +32,12 @@ import uga.menik.cs4370.services.UserService;
 public class BookmarksController {
 
     private final UserService userService;
-    private final DataSource dataSource;
+    private final BookmarkService bookmarkService;
     
     @Autowired
-    public BookmarksController(UserService userService, DataSource dataSource) {
+    public BookmarksController(UserService userService, BookmarkService bookmarkService) {
         this.userService = userService;
-        this.dataSource = dataSource;
+        this.bookmarkService = bookmarkService;
     }
 
 
@@ -60,7 +54,7 @@ public class BookmarksController {
         /** Modified code starts here */
         String loggedInUserId = userService.getLoggedInUser().getUserId();
 
-        List<Post> postsToCheck = getPostsNotByCurrentUser(loggedInUserId);
+        List<Post> postsToCheck = bookmarkService.getPostsNotByCurrentUser(loggedInUserId);
         if (postsToCheck.isEmpty()) {
             // Enable the following line if you want to show no content message.
             // Do that if your content list is empty.
@@ -104,68 +98,6 @@ public class BookmarksController {
         return mv;
     }
 
-    private List<Post> getPostsNotByCurrentUser(String userIdToExclude) {
-        List<Post> postsNotByUser = new ArrayList<>();
-
-        final String sql = "select * from post where userId != ?";
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            // Following line replaces the first place holder with username.
-            pstmt.setString(1, userIdToExclude);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    String userId = rs.getString("userId");
-                    if (!userId.equals(userIdToExclude)) {
-                        String postId = rs.getString("postId");
-                        String content = rs.getString("content");
-                        String postDate = rs.getString("postDate");
-
-                        User user = getUserById(userId); /** need to join tables in sql */
-
-                        int heartsCount = rs.getInt("heartsCount");
-                        int commentsCount = rs.getInt("commentsCount");
-                        boolean isHearted = rs.getBoolean("isHearted");
-                        boolean isBookmarked = rs.getBoolean("isBookmarked");
-
-                        Post posts = new Post(postId, content, postDate, user, heartsCount, commentsCount, isHearted, isBookmarked);
-                        postsNotByUser.add(posts);
-                    }
-                }
-            }
-        } catch(SQLException e) {
-            e.printStackTrace();
-        }
-
-        return postsNotByUser;
-    }
-
-    private User getUserById(String userId) {
-
-        final String sql = "select * from users where userId == ?";
-        try (Connection conn = dataSource.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            // Following line replaces the first place holder with username.
-            pstmt.setString(1, userId);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    return new User(
-                        userId,
-                        rs.getString("firstName"),
-                        rs.getString("lastName"),
-                        rs.getString("profileImagePath")
-                    );
-                    
-                }
-            }
-        } catch(SQLException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
+    
     
 }
