@@ -33,7 +33,7 @@ public class Utility {
         List<Post> postsWithoutComments = new ArrayList<>();
         postsWithoutComments.add(new Post("1", "Exploring Spring Boot features",
                 "Mar 07, 2024, 10:54 PM", user1, 10, 4, false, false));
-        postsWithoutComments.add(new Post("2", "Introduction to Microservices",
+        postsWithoutComments.add(new Post("2", "Introduction to Microservices #java",
                 "Mar 08, 2024, 11:00 AM", user2, 15, 6, true, true));
         postsWithoutComments.add(new Post("3", "Basics of Reactive Programming",
                 "Mar 09, 2024, 09:30 AM", user3, 20, 3, true, false));
