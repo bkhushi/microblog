@@ -14,8 +14,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.cs4370.models.Post;
+import uga.menik.cs4370.models.User;
 import uga.menik.cs4370.services.BookmarkService;
 import uga.menik.cs4370.services.UserService;
+
 
 /**
  * Handles /bookmarks and its sub URLs.
@@ -47,18 +49,31 @@ public class BookmarksController {
         // ModelAndView class enables initializing one and populating placeholders
         // in the template using Java objects assigned to named properties.
         ModelAndView mv = new ModelAndView("posts_page");
+        String errorMessage = "";
 
         /** Modified code starts here */
-        String loggedInUserId = userService.getLoggedInUser().getUserId();
-
-        List<Post> posts = bookmarkService.getBookmarkedPosts(loggedInUserId);
-        if (posts.isEmpty()) {
-            // Enable the following line if you want to show no content message.
-            // Do that if your content list is empty.
-            mv.addObject("isNoContent", true);
-        } else {
-            mv.addObject("posts", posts);
+        User loggedInUser = userService.getLoggedInUser();
+        if (loggedInUser == null) {
+            errorMessage = "User is not logged in.";
+            mv.addObject("errorMessage", errorMessage);
+            return mv;
         }
+        String loggedInUserId = loggedInUser.getUserId();
+        try {
+            List<Post> posts = bookmarkService.getBookmarkedPosts(loggedInUserId);
+            if (posts.isEmpty()) {
+                // Enable the following line if you want to show no content message.
+                // Do that if your content list is empty.
+                mv.addObject("isNoContent", true);
+            } else {
+                mv.addObject("posts", posts);
+            }
+        } catch (Exception E) {
+            errorMessage = "An error occurred while fetching posts.";
+            mv.addObject("errorMessage", errorMessage);
+            return mv;
+        }
+        
         
 
         // Following line populates sample data.
@@ -68,8 +83,8 @@ public class BookmarksController {
 
         // If an error occured, you can set the following property with the
         // error message to show the error message to the user.
-        String errorMessage = "Some error occured!";
-        mv.addObject("errorMessage", errorMessage);
+        
+        
 
         
 
