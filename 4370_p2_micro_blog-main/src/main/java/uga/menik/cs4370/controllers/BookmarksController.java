@@ -49,12 +49,12 @@ public class BookmarksController {
         // ModelAndView class enables initializing one and populating placeholders
         // in the template using Java objects assigned to named properties.
         ModelAndView mv = new ModelAndView("posts_page");
-        String errorMessage = "";
+        
 
         /** Modified code starts here */
         User loggedInUser = userService.getLoggedInUser();
         if (loggedInUser == null) {
-            errorMessage = "User is not logged in.";
+            String errorMessage = "User is not logged in.";
             mv.addObject("errorMessage", errorMessage);
             return mv;
         }
@@ -69,7 +69,7 @@ public class BookmarksController {
                 mv.addObject("posts", posts);
             }
         } catch (Exception E) {
-            errorMessage = "An error occurred while fetching posts.";
+            String errorMessage = "An error occurred while fetching posts.";
             mv.addObject("errorMessage", errorMessage);
             return mv;
         }
