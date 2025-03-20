@@ -68,8 +68,9 @@ public class BookmarksController {
             } else {
                 mv.addObject("posts", posts);
             }
-        } catch (Exception E) {
+        } catch (Exception e) {
             String errorMessage = "An error occurred while fetching posts.";
+            e.printStackTrace();
             mv.addObject("errorMessage", errorMessage);
             return mv;
         }

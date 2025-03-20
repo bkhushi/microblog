@@ -83,6 +83,7 @@ public class ProfileController {
             }
         } catch (Exception e) {
             String errorMessage = "An error occurred while fetching posts by User ID.";
+            e.printStackTrace();
             mv.addObject("errorMessage", errorMessage);
         }
         

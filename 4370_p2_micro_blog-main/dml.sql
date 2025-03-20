@@ -10,5 +10,5 @@ ORDER BY p.created_at DESC;
 -- Url:
 SELECT * 
 FROM post 
-WHERE userId = ? 
+WHERE user_id = ? 
 ORDER BY p.created_at DESC;

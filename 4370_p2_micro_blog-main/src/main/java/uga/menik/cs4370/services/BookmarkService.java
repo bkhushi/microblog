@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import uga.menik.cs4370.models.Post;
 import uga.menik.cs4370.models.User;
 
+
 @Service
 public class BookmarkService {
     @Autowired
@@ -24,9 +25,9 @@ public class BookmarkService {
         List<Post> posts = new ArrayList<>();
 
         final String sql = "SELECT DISTINCT p.*, u.username, u.firstName, u.lastName " +
-                "FROM post p " +
+                "FROM post_no_comments p " +
                 "JOIN user u ON p.user_id = u.userId " +
-                "WHERE p.isBookmarked = true AND p.user_id != ?" +
+                "WHERE p.is_bookmarked = true AND p.user_id != ?" +
                 "ORDER BY p.created_at DESC";
 
         try (Connection conn = dataSource.getConnection();
