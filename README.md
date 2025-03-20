@@ -1,8 +1,8 @@
 # microblog
 
-# Group: 4 Members: Khushi Bhatamrekar, Aditi Chiluguri, Catherine Chu, Grace Ryoo
+Group: 4 Members: Khushi Bhatamrekar, Aditi Chiluguri, Catherine Chu, Grace Ryoo
 
-# Contributions:
+Contributions:
 
 Khushi Bhatamrekar:
 
@@ -12,7 +12,7 @@ Catherine Chu:
 
 Grace Ryoo:
 
-# How to run:
+How to run:
 
 Start the MySQL docker container and get the mysql prompt.
 
