@@ -23,8 +23,8 @@ CREATE TABLE if not exists follow (
     following_id INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (follower_id, following_id),
-    FOREIGN KEY (follower_id) REFERENCES user(userId),
-    FOREIGN KEY (following_id) REFERENCES user(userId)
+    FOREIGN KEY (follower_id) REFERENCES user(user_id),
+    FOREIGN KEY (following_id) REFERENCES user(user_id)
 );
 -- Create hashtag table
 CREATE TABLE if not exists hashtag (

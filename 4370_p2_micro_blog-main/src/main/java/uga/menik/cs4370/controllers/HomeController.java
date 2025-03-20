@@ -19,6 +19,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.cs4370.models.Post;
 import uga.menik.cs4370.services.PostService;
+import uga.menik.cs4370.services.UserService;
 import uga.menik.cs4370.utility.Utility;
 
 /**
@@ -30,6 +31,15 @@ public class HomeController {
 
     @Autowired
     private PostService postService;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    public HomeController(PostService postService, UserService userService) {
+        this.postService = postService;
+        this.userService = userService;
+    }
     /**
      * This is the specific function that handles the root URL itself.
      * 
@@ -64,9 +74,11 @@ public class HomeController {
     public ModelAndView webpage(@RequestParam(name = "error", required = false) String error) {
         ModelAndView mv = new ModelAndView("home_page");
     
+        
+        String currentUserId = userService.getLoggedInUser().getUserId();
         // Fetch posts from followed users
         //List<Post> posts = Utility.createSamplePostsListWithoutComments();
-        List<Post> posts = postService.getPostsFromFollowedUsers("CURRENT_USER_ID");
+        List<Post> posts = postService.getPostsFromFollowedUsers(currentUserId);
         mv.addObject("posts", posts);
     
         if (posts.isEmpty()) {
@@ -90,17 +102,41 @@ public class HomeController {
     public String createPost(@RequestParam(name = "posttext") String postText) {
         System.out.println("User is creating post: " + postText);
 
-        // Redirect the user if the post creation is a success.
+
+        // Get the current logged-in user ID
+        //User loggedInUser = userService.getLoggedInUser();
+        //if (loggedInUser == null) {
+        //    String message = URLEncoder.encode("User is not authenticated.", StandardCharsets.UTF_8);
+          //  return "redirect:/?error=" + message;
+        //}
+
+        String currentUserId = userService.getLoggedInUser().getUserId();
+        boolean success = postService.createPost(postText, currentUserId);
+        
+
+        if (success) {
+            return "redirect:/"; // Redirect ensures all posts are shown
+        }
+
+    // Redirect the user with an error message if there was an error.
+    String message = URLEncoder.encode("Failed to create the post. Please try again.", StandardCharsets.UTF_8);
+    return "redirect:/?error=" + message;
+
+
+        /*
+      // Redirect the user if the post creation is a success.
         // return "redirect:/";
         boolean success = postService.createPost(postText);
         if (success) {
             List<Post> posts = postService.getPostsFromFollowedUsers("CURRENT_USER_ID");
             return "redirect:/";
+            //return posts;
         }
+            */
+        
 
         // Redirect the user with an error message if there was an error.
-        String message = URLEncoder.encode("Failed to create the post. Please try again.",
-                StandardCharsets.UTF_8);
-        return "redirect:/?error=" + message;
+        //String message = URLEncoder.encode("Failed to create the post. Please try again.", StandardCharsets.UTF_8);
+        //return "redirect:/?error=" + message;
     }
 }

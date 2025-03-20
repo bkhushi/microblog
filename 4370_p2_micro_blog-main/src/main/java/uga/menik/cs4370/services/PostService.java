@@ -28,10 +28,15 @@ public class PostService {
      * Creates a new post for the logged-in user.
      * Supports hashtags, which are automatically extracted and linked.
      */
-    public boolean createPost(String content) {
+    public boolean createPost(String content, String userId) {
+        /* 
         User loggedInUser = userService.getLoggedInUser();
         if (loggedInUser == null) {
             throw new RuntimeException("User is not authenticated.");
+        }
+            */
+        if (userId == null || userId.isEmpty()) {
+            throw new RuntimeException("User ID is required to create a post.");
         }
 
         final String sql = "INSERT INTO post (content, user_id) VALUES (?, ?)";
@@ -39,7 +44,8 @@ public class PostService {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, content);
-            pstmt.setString(2, loggedInUser.getUserId());
+            pstmt.setString(2, userId);
+            pstmt.setString(2, userId);
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0;
         } catch (SQLException e) {
@@ -114,7 +120,7 @@ public class PostService {
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     User user = new User(
-                        rs.getString("userId"),
+                        rs.getString("user_id"),
                         rs.getString("firstName"),
                         rs.getString("lastName")
                     );
