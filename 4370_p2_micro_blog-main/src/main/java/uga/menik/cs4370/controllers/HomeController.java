@@ -19,6 +19,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.cs4370.models.Post;
 import uga.menik.cs4370.services.PostService;
+import uga.menik.cs4370.services.UserService;
 import uga.menik.cs4370.utility.Utility;
 
 /**
@@ -30,6 +31,16 @@ public class HomeController {
 
     @Autowired
     private PostService postService;
+
+    @Autowired
+    private UserService userService; // added
+
+    @Autowired
+    public HomeController(PostService postService, UserService userService) {
+        this.postService = postService;
+        this.userService = userService;
+    } // added
+
     /**
      * This is the specific function that handles the root URL itself.
      * 
@@ -93,8 +104,10 @@ public class HomeController {
         // Redirect the user if the post creation is a success.
         // return "redirect:/";
         boolean success = postService.createPost(postText);
+        String loggedInUserId = userService.getLoggedInUser().getUserId();
+
         if (success) {
-            List<Post> posts = postService.getPostsFromFollowedUsers("CURRENT_USER_ID");
+            List<Post> posts = postService.getPostsFromFollowedUsers(loggedInUserId);
             return "redirect:/";
         }
 
