@@ -62,25 +62,37 @@ public class ProfileController {
         
         // See notes on ModelAndView in BookmarksController.java.
         ModelAndView mv = new ModelAndView("posts_page");
+        
 
         // Following line populates sample data.
         // You should replace it with actual data from the database.
         // List<Post> posts = Utility.createSamplePostsListWithoutComments();
-        List<Post> posts = profileService.getPostsBySpecificUser(userId);
-
-        if (posts.isEmpty()) {
-            // Enable the following line if you want to show no content message.
-            // Do that if your content list is empty.
-            mv.addObject("isNoContent", true);
-        } else {
-            mv.addObject("posts", posts);
+        if (userId == null || userId.trim().isEmpty()) {
+            String errorMessage = "User ID is null or empty.";
+            mv.addObject("errorMessage", errorMessage);
         }
+        try {
+            List<Post> posts = profileService.getPostsBySpecificUser(userId);
+
+            if (posts.isEmpty()) {
+                // Enable the following line if you want to show no content message.
+                // Do that if your content list is empty.
+                mv.addObject("isNoContent", true);
+            } else {
+                mv.addObject("posts", posts);
+            }
+        } catch (Exception e) {
+            String errorMessage = "An error occurred while fetching posts by User ID.";
+            e.printStackTrace();
+            mv.addObject("errorMessage", errorMessage);
+        }
+        
     
 
         // If an error occured, you can set the following property with the
         // error message to show the error message to the user.
-        String errorMessage = "Some error occured!";
-        mv.addObject("errorMessage", errorMessage);
+        
+        
 
         
         

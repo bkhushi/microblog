@@ -23,8 +23,8 @@ CREATE TABLE if not exists follow (
     following_id INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (follower_id, following_id),
-    FOREIGN KEY (follower_id) REFERENCES user(userId),
-    FOREIGN KEY (following_id) REFERENCES user(userId)
+    FOREIGN KEY (follower_id) REFERENCES user(userID),
+    FOREIGN KEY (following_id) REFERENCES user(userID)
 );
 -- Create hashtag table
 CREATE TABLE if not exists hashtag (
@@ -101,3 +101,16 @@ BEGIN
     );
 END//
 DELIMITER ;
+
+-- Create post table (with no all columns minus comments) if not exists
+CREATE TABLE IF NOT EXISTS post_no_comments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    content TEXT NOT NULL,
+    user_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    hearts_count INT DEFAULT 0,
+    comments_count INT DEFAULT 0,
+    is_hearted BOOLEAN DEFAULT FALSE,
+    is_bookmarked BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+);

@@ -24,8 +24,8 @@ public class ProfileService {
     public List<Post> getPostsBySpecificUser(String userId) {
         List<Post> postsByUser = new ArrayList<>();
 
-        final String sql = "SELECT * FROM post WHERE userId = ?" + 
-                "ORDER BY p.created_at DESC";
+        final String sql = "SELECT * FROM post_no_comments WHERE user_id = ?" + 
+                "ORDER BY created_at DESC";
 
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
