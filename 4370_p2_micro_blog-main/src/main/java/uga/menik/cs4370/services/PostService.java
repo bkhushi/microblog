@@ -95,37 +95,39 @@ public class PostService {
      * Retrieves posts from users that the logged-in user follows.
      * @return List of posts ordered from most recent to oldest.
      */
-    public List<Post> getPostsFromFollowedUsers() {
-        User loggedInUser = userService.getLoggedInUser();
-        if (loggedInUser == null) {
-            throw new RuntimeException("User is not authenticated.");
-        }
-
+    public List<Post> getPostsFromFollowedUsers(String userId) {
         List<Post> posts = new ArrayList<>();
-
-        final String sql = "SELECT DISTINCT p.*, u.userId, u.firstName, u.lastName " +
-                "FROM post p " +
-                "JOIN user u ON p.user_id = u.userId " +
-                "JOIN follow f ON p.user_id = f.following_id " +
-                "WHERE f.follower_id = ? " +
-                "ORDER BY p.created_at DESC";
-
+    
+        String sql = "SELECT p.*, u.username, u.firstName, u.lastName " +
+                     "FROM post p " +
+                     "JOIN user u ON p.user_id = u.userId " +
+                     "LEFT JOIN follow f ON p.user_id = f.following_id AND f.follower_id = ? " +
+                     "WHERE f.follower_id IS NOT NULL OR p.user_id = ? " + // Include self-posts
+                     "ORDER BY p.created_at DESC";
+    
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, loggedInUser.getUserId());
-
+    
+            pstmt.setString(1, userId); // First param: followed users
+            pstmt.setString(2, userId); // Second param: self-posts
+    
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    User user = new User(rs.getString("userId"), rs.getString("firstName"), rs.getString("lastName"));
+                    User user = new User(
+                        rs.getString("userId"),
+                        rs.getString("firstName"),
+                        rs.getString("lastName")
+                    );
+    
                     Post post = new Post(
-                            rs.getString("id"),
-                            rs.getString("content"),
-                            rs.getString("created_at"),
-                            user,
-                            rs.getInt("hearts_count"),
-                            rs.getInt("comments_count"),
-                            rs.getBoolean("is_hearted"),
-                            rs.getBoolean("is_bookmarked")
+                        rs.getString("id"),
+                        rs.getString("content"),
+                        rs.getString("created_at"),
+                        user,
+                        rs.getInt("hearts_count"),
+                        rs.getInt("comments_count"),
+                        rs.getBoolean("is_hearted"),
+                        rs.getBoolean("is_bookmarked")
                     );
                     posts.add(post);
                 }
@@ -133,6 +135,9 @@ public class PostService {
         } catch (SQLException e) {
             throw new RuntimeException("Error fetching posts from followed users", e);
         }
+    
         return posts;
     }
+    
+    
 }

@@ -85,6 +85,25 @@ public class UserService {
         return false;
     }
 
+    private void ensureUserFollowsSelf(String userId) {
+        final String followSql = "INSERT INTO follow (follower_id, following_id) " +
+                                 "SELECT ?, ? FROM DUAL WHERE NOT EXISTS " +
+                                 "(SELECT 1 FROM follow WHERE follower_id = ? AND following_id = ?)";
+    
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(followSql)) {
+    
+            pstmt.setString(1, userId);
+            pstmt.setString(2, userId);
+            pstmt.setString(3, userId);
+            pstmt.setString(4, userId);
+            pstmt.executeUpdate();
+    
+        } catch (SQLException e) {
+            throw new RuntimeException("Error ensuring user follows themselves", e);
+        }
+    }
+
     /**
      * Logs out the user.
      */
@@ -127,8 +146,18 @@ public class UserService {
 
             // Execute the statement and check if rows are affected.
             int rowsAffected = registerStmt.executeUpdate();
-            return rowsAffected > 0;
+            if (rowsAffected > 0) {
+                try (ResultSet generatedKeys = registerStmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        String userId = generatedKeys.getString(1);
+                        ensureUserFollowsSelf(userId);
+                    }
+                }
+                return true;
+            }
+            //return rowsAffected > 0;
         }
+        return false;
     }
 
 }

@@ -37,8 +37,8 @@ public class HomeController {
      * The value to this parameter can be shown to the user as an error message.
      * See notes in HashtagSearchController.java regarding URL parameters.
      */
-    @GetMapping
-    public ModelAndView webpage(@RequestParam(name = "error", required = false) String error) {
+    @GetMapping("/sample")
+    public ModelAndView sample(@RequestParam(name = "error", required = false) String error) {
         // See notes on ModelAndView in BookmarksController.java.
         ModelAndView mv = new ModelAndView("home_page");
 
@@ -59,6 +59,24 @@ public class HomeController {
 
         return mv;
     }
+    
+    @GetMapping
+    public ModelAndView webpage(@RequestParam(name = "error", required = false) String error) {
+        ModelAndView mv = new ModelAndView("home_page");
+    
+        // Fetch posts from followed users
+        //List<Post> posts = Utility.createSamplePostsListWithoutComments();
+        List<Post> posts = postService.getPostsFromFollowedUsers("CURRENT_USER_ID");
+        mv.addObject("posts", posts);
+    
+        if (posts.isEmpty()) {
+            mv.addObject("isNoContent", true);
+        }
+    
+        mv.addObject("errorMessage", error);
+        return mv;
+    }
+
 
     /**
      * This function handles the /createpost URL.
@@ -76,6 +94,7 @@ public class HomeController {
         // return "redirect:/";
         boolean success = postService.createPost(postText);
         if (success) {
+            List<Post> posts = postService.getPostsFromFollowedUsers("CURRENT_USER_ID");
             return "redirect:/";
         }
 
