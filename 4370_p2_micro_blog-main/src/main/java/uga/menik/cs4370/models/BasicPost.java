@@ -71,7 +71,7 @@ public class BasicPost {
      */
     public String getPostDate() {
         return postDate;
-    }
+    }    
 
     /**
      * Returns the user who created the post.

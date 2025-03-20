@@ -1,14 +1,15 @@
 /**
-Copyright (c) 2024 Sami Menik, PhD. All rights reserved.
-
-This is a project developed by Dr. Menik to give the students an opportunity to apply database concepts learned in the class in a real world project. Permission is granted to host a running version of this software and to use images or videos of this work solely for the purpose of demonstrating the work to potential employers. Any form of reproduction, distribution, or transmission of the software's source code, in part or whole, without the prior written consent of the copyright owner, is strictly prohibited.
-*/
+ * Copyright (c) 2024 Sami Menik, PhD. All rights reserved.
+ *
+ *  *This is a project developed by Dr. Menik to give the students an opportunity to apply database concepts learned in the class in a real world project. Permission is granted to host a running version of this software and to use images or videos of this work solely for the purpose of demonstrating the work to potential employers. Any form of reproduction, distribution, or transmission of the software's source code, in part or whole, without the prior written consent of the copyright owner, is strictly prohibited.
+ */
 package uga.menik.cs4370.controllers;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +19,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.cs4370.models.ExpandedPost;
+import uga.menik.cs4370.models.User;
+import uga.menik.cs4370.services.PostService;
+import uga.menik.cs4370.services.UserService;
 import uga.menik.cs4370.utility.Utility;
 
 /**
@@ -27,14 +31,22 @@ import uga.menik.cs4370.utility.Utility;
 @RequestMapping("/post")
 public class PostController {
 
+    private final PostService postService;
+    private UserService userService;
+
+    @Autowired
+    public PostController(PostService postService) {
+        this.postService = postService;
+    }
+
+    User loggedInUser = userService.getLoggedInUser();
+
     /**
-     * This function handles the /post/{postId} URL.
-     * This handlers serves the web page for a specific post.
-     * Note there is a path variable {postId}.
-     * An example URL handled by this function looks like below:
-     * http://localhost:8081/post/1
-     * The above URL assigns 1 to postId.
-     * 
+     * This function handles the /post/{postId} URL. This handlers serves the
+     * web page for a specific post. Note there is a path variable {postId}. An
+     * example URL handled by this function looks like below:
+     * http://localhost:8081/post/1 The above URL assigns 1 to postId.
+     *
      * See notes from HomeController.java regardig error URL parameter.
      */
     @GetMapping("/{postId}")
@@ -58,15 +70,13 @@ public class PostController {
         // Enable the following line if you want to show no content message.
         // Do that if your content list is empty.
         // mv.addObject("isNoContent", true);
-
         return mv;
     }
 
     /**
-     * Handles comments added on posts.
-     * See comments on webpage function to see how path variables work here.
-     * This function handles form posts.
-     * See comments in HomeController.java regarding form submissions.
+     * Handles comments added on posts. See comments on webpage function to see
+     * how path variables work here. This function handles form posts. See
+     * comments in HomeController.java regarding form submissions.
      */
     @PostMapping("/{postId}/comment")
     public String postComment(@PathVariable("postId") String postId,
@@ -77,7 +87,6 @@ public class PostController {
 
         // Redirect the user if the comment adding is a success.
         // return "redirect:/post/" + postId;
-
         // Redirect the user with an error message if there was an error.
         String message = URLEncoder.encode("Failed to post the comment. Please try again.",
                 StandardCharsets.UTF_8);
@@ -85,10 +94,10 @@ public class PostController {
     }
 
     /**
-     * Handles likes added on posts.
-     * See comments on webpage function to see how path variables work here.
-     * See comments in PeopleController.java in followUnfollowUser function regarding 
-     * get type form submissions and how path variables work.
+     * Handles likes added on posts. See comments on webpage function to see how
+     * path variables work here. See comments in PeopleController.java in
+     * followUnfollowUser function regarding get type form submissions and how
+     * path variables work.
      */
     @GetMapping("/{postId}/heart/{isAdd}")
     public String addOrRemoveHeart(@PathVariable("postId") String postId,
@@ -98,19 +107,26 @@ public class PostController {
         System.out.println("\tisAdd: " + isAdd);
 
         // Redirect the user if the comment adding is a success.
-        // return "redirect:/post/" + postId;
-
-        // Redirect the user with an error message if there was an error.
-        String message = URLEncoder.encode("Failed to (un)like the post. Please try again.",
-                StandardCharsets.UTF_8);
-        return "redirect:/post/" + postId + "?error=" + message;
+        try {
+            String currUserId = loggedInUser.getUserId();
+            if (isAdd) {
+                postService.likePost(currUserId, postId);
+            } else {
+                postService.unlikePost(currUserId, postId);
+            }
+            return "redirect:/post/" + postId;
+        } catch (Exception e) {
+            // Redirect the user with an error message if there was an error.
+            String message = URLEncoder.encode("Failed to (un)like the post. Please try again.",
+                    StandardCharsets.UTF_8);
+            return "redirect:/post/" + postId + "?error=" + message;
+        }
     }
 
     /**
-     * Handles bookmarking posts.
-     * See comments on webpage function to see how path variables work here.
-     * See comments in PeopleController.java in followUnfollowUser function regarding 
-     * get type form submissions.
+     * Handles bookmarking posts. See comments on webpage function to see how
+     * path variables work here. See comments in PeopleController.java in
+     * followUnfollowUser function regarding get type form submissions.
      */
     @GetMapping("/{postId}/bookmark/{isAdd}")
     public String addOrRemoveBookmark(@PathVariable("postId") String postId,
@@ -121,7 +137,6 @@ public class PostController {
 
         // Redirect the user if the comment adding is a success.
         // return "redirect:/post/" + postId;
-
         // Redirect the user with an error message if there was an error.
         String message = URLEncoder.encode("Failed to (un)bookmark the post. Please try again.",
                 StandardCharsets.UTF_8);

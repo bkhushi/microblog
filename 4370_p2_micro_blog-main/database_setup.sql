@@ -52,6 +52,16 @@ CREATE TABLE if not exists post_hashtag (
     FOREIGN KEY (hashtag_id) REFERENCES hashtag(id) ON DELETE CASCADE
 );
 
+-- Create post likes table to store likes
+CREATE TABLE IF NOT EXISTS post_likes (
+    user_id INT,
+    post_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, post_id),
+    FOREIGN KEY (user_id) REFERENCES user(userId) ON DELETE CASCADE,
+    FOREIGN KEY (post_id) REFERENCES post(id) ON DELETE CASCADE
+);
+
 -- Create trigger to extract and link hashtags when a post is created
 DELIMITER //
 CREATE TRIGGER extract_hashtags_after_insert
