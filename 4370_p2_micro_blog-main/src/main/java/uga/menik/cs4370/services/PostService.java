@@ -2,18 +2,12 @@ package uga.menik.cs4370.services;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import uga.menik.cs4370.models.Post;
-import uga.menik.cs4370.models.User;
 
 @Service
 public class PostService {
@@ -58,7 +52,7 @@ public class PostService {
      * @param hashtags List of hashtags to search for.
      * @return List of matching posts.
      */
-    public List<Post> getPostsByHashtags(List<String> hashtags) {
+    /* public List<Post> getPostsByHashtags(List<String> hashtags) {
         List<Post> posts = new ArrayList<>();
         
         String query = "SELECT DISTINCT p.*, u.userId, u.firstName, u.lastName " +
@@ -95,13 +89,13 @@ public class PostService {
             throw new RuntimeException("Error fetching posts by hashtags", e);
         }
         return posts;
-    }
+    } */
 
     /**
      * Retrieves posts from users that the logged-in user follows.
      * @return List of posts ordered from most recent to oldest.
      */
-    public List<Post> getPostsFromFollowedUsers(String userId) {
+    /* public List<Post> getPostsFromFollowedUsers(String userId) {
         List<Post> posts = new ArrayList<>();
     
         String sql = "SELECT p.*, u.username, u.firstName, u.lastName " +
@@ -144,6 +138,6 @@ public class PostService {
     
         return posts;
     }
-    
+     */
     
 }
