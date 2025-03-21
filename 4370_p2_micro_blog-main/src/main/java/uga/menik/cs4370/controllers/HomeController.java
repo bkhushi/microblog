@@ -77,8 +77,8 @@ public class HomeController {
         
         String currentUserId = userService.getLoggedInUser().getUserId();
         // Fetch posts from followed users
-        //List<Post> posts = Utility.createSamplePostsListWithoutComments();
-        List<Post> posts = postService.getPostsFromFollowedUsers(currentUserId);
+        List<Post> posts = Utility.createSamplePostsListWithoutComments();
+        //List<Post> posts = postService.getPostsFromFollowedUsers(currentUserId);
         mv.addObject("posts", posts);
     
         if (posts.isEmpty()) {
