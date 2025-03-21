@@ -16,38 +16,28 @@ import uga.menik.cs4370.models.Post;
 import uga.menik.cs4370.models.User;
 
 @Service
-public class HashtagService {
-
+public class BookmarkService {
     @Autowired
     private DataSource dataSource;
 
-    public List<Post> getPostsByHashtags(List<String> hashtags) {
+    public List<Post> getBookmarkedPosts(String userIdToExclude) {
         List<Post> posts = new ArrayList<>();
 
-        // Build LIKE conditions for each hashtag
-        List<String> conditions = new ArrayList<>();
-        for (int i = 0; i < hashtags.size(); i++) {
-            conditions.add("p.content LIKE ?");
-        }
-
-        String query = "SELECT DISTINCT p.*, u.userId, u.firstName, u.lastName " +
-                      "FROM post p " +
-                      "JOIN user u ON p.user_id = u.userId " +
-                      "WHERE " + String.join(" OR ", conditions) + " " +
-                      "ORDER BY p.created_at DESC";
+        final String sql = "SELECT DISTINCT p.*, u.username, u.firstName, u.lastName " +
+                "FROM post p " +
+                "JOIN user u ON p.user_id = u.userId " +
+                "WHERE p.isBookmarked = true AND p.user_id != ?" +
+                "ORDER BY p.created_at DESC";
 
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
+            PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            // Set parameters for LIKE conditions
-            for (int i = 0; i < hashtags.size(); i++) {
-                stmt.setString(i + 1, "%" + "#" + hashtags.get(i) + "%");
-            }
+            // Following line replaces the first place holder with username.
+            pstmt.setString(1, userIdToExclude);
 
-            try (ResultSet rs = stmt.executeQuery()) {
+            try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    User user = new User(
-                        rs.getString("userId"),
+                    User user = new User(rs.getString("userId"), 
                         rs.getString("firstName"),
                         rs.getString("lastName")
                     );
@@ -63,12 +53,14 @@ public class HashtagService {
                         rs.getBoolean("is_bookmarked")
                     );
                     posts.add(post);
+                    
                 }
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error fetching posts by hashtags", e);
+        } catch(SQLException e) {
+            throw new RuntimeException("Error fetching posts", e);
         }
 
         return posts;
     }
+
 }
