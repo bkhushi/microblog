@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,14 +25,23 @@ public class ProfileService {
     public List<Post> getPostsBySpecificUser(String userId) {
         List<Post> postsByUser = new ArrayList<>();
 
-        final String sql = "SELECT * FROM post WHERE userId = ?" + 
+        final String sql = "SELECT p.id AS postId, p.content AS postText, p.created_at AS postDate, " +
+                "u.userId, u.username, u.firstName, u.lastName, " +
+                "(SELECT COUNT(*) FROM heart h WHERE h.postId = p.id) AS hearts_count, " +
+                "(SELECT COUNT(*) FROM comment c WHERE c.postId = p.id) AS comments_count, " +
+                "EXISTS (SELECT 1 FROM heart h WHERE h.postId = p.id AND h.userId = ?) AS is_hearted, " +
+                "EXISTS (SELECT 1 FROM bookmark b WHERE b.postId = p.id AND b.userId = ?) AS is_bookmarked " +
+                "FROM post p " +
+                "JOIN user u ON p.user_id = u.userId " +
+                "WHERE p.user_id = ? " +
                 "ORDER BY p.created_at DESC";
 
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            // Following line replaces the first place holder with username.
-            pstmt.setString(1, userId);
+            pstmt.setString(1, userId); // Checking if the logged-in user liked the post
+            pstmt.setString(2, userId); // Checking if the logged-in user bookmarked the post
+            pstmt.setString(3, userId); // Filtering posts by the specific user
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
@@ -41,9 +51,9 @@ public class ProfileService {
                     );
 
                     Post post = new Post(
-                        rs.getString("id"),
-                        rs.getString("content"),
-                        rs.getString("created_at"),
+                        rs.getString("postId"),
+                        rs.getString("postText"),
+                        rs.getTimestamp("postDate").toLocalDateTime().format(DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a")),
                         user,
                         rs.getInt("hearts_count"),
                         rs.getInt("comments_count"),
