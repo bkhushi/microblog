@@ -45,7 +45,7 @@ public class PostService {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, content);
             pstmt.setString(2, userId);
-            pstmt.setString(2, userId);
+            //pstmt.setString(2, userId);
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0;
         } catch (SQLException e) {
