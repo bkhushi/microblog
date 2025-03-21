@@ -52,16 +52,6 @@ CREATE TABLE if not exists post_hashtag (
     FOREIGN KEY (hashtag_id) REFERENCES hashtag(id) ON DELETE CASCADE
 );
 
--- Create post likes table to store likes
-CREATE TABLE IF NOT EXISTS post_likes (
-    user_id INT,
-    post_id INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id, post_id),
-    FOREIGN KEY (user_id) REFERENCES user(userId) ON DELETE CASCADE,
-    FOREIGN KEY (post_id) REFERENCES post(id) ON DELETE CASCADE
-);
-
 -- Create trigger to extract and link hashtags when a post is created
 DELIMITER //
 CREATE TRIGGER extract_hashtags_after_insert
@@ -102,15 +92,35 @@ BEGIN
 END//
 DELIMITER ;
 
--- Create post table (with no all columns minus comments) if not exists
-CREATE TABLE IF NOT EXISTS post_no_comments (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    content TEXT NOT NULL,
-    user_id INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    hearts_count INT DEFAULT 0,
-    comments_count INT DEFAULT 0,
-    is_hearted BOOLEAN DEFAULT FALSE,
-    is_bookmarked BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+-- Create the comment table. 
+CREATE TABLE comment (
+    commentId INT AUTO_INCREMENT PRIMARY KEY,  -- Unique comment ID
+    postId INT NOT NULL,  -- Foreign key referencing post(id)
+    userId INT NOT NULL,  -- Foreign key referencing user(userId)
+    commentDate DATETIME DEFAULT CURRENT_TIMESTAMP,  -- Timestamp of comment
+    commentText TEXT NOT NULL,  -- Comment content
+
+    -- Foreign key constraints
+    CONSTRAINT fk_comment_post FOREIGN KEY (postId) REFERENCES post(id) ON DELETE CASCADE,
+    CONSTRAINT fk_comment_user FOREIGN KEY (userId) REFERENCES user(userId) ON DELETE CASCADE
+);
+
+-- Create the heart table.
+CREATE TABLE heart (
+    postId INT NOT NULL,  -- Foreign key referencing post(id)
+    userId INT NOT NULL,  -- Foreign key referencing user(userId)
+
+    PRIMARY KEY (postId, userId),  -- Composite primary key (ensures unique likes)
+    CONSTRAINT fk_heart_post FOREIGN KEY (postId) REFERENCES post(id) ON DELETE CASCADE,
+    CONSTRAINT fk_heart_user FOREIGN KEY (userId) REFERENCES user(userId) ON DELETE CASCADE
+);
+
+-- Create the bookmark table.
+CREATE TABLE bookmark (
+    postId INT NOT NULL,  -- Foreign key referencing post(id)
+    userId INT NOT NULL,  -- Foreign key referencing user(userId)
+
+    PRIMARY KEY (postId, userId),  -- Composite primary key (ensures unique bookmarks)
+    CONSTRAINT fk_bookmark_post FOREIGN KEY (postId) REFERENCES post(id) ON DELETE CASCADE,
+    CONSTRAINT fk_bookmark_user FOREIGN KEY (userId) REFERENCES user(userId) ON DELETE CASCADE
 );
