@@ -18,10 +18,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
+import uga.menik.cs4370.models.Comment;
 import uga.menik.cs4370.models.ExpandedPost;
+import uga.menik.cs4370.models.Post;
 import uga.menik.cs4370.services.PostService;
 import uga.menik.cs4370.services.UserService;
-import uga.menik.cs4370.utility.Utility;
 
 /**
  * Handles /post URL and its sub urls.
@@ -57,10 +58,26 @@ public class PostController {
         // See notes on ModelAndView in BookmarksController.java.
         ModelAndView mv = new ModelAndView("posts_page");
 
-        // Following line populates sample data.
-        // You should replace it with actual data from the database.
-        List<ExpandedPost> posts = Utility.createSampleExpandedPostWithComments();
-        mv.addObject("posts", posts);
+        String currUserId = userService.getLoggedInUser().getUserId();
+        // Fetch the post and its comments from the database
+        Post post = postService.getPostById(postId, currUserId);  // Fetch the post by ID from the service
+        List<Comment> comments = postService.getCommentsForPost(postId);  // Fetch comments for the post
+
+        // Create an ExpandedPost object or use your existing method to combine post and comments
+        // Assuming 'post' is the Post object that you retrieved from the database
+        ExpandedPost expandedPost = new ExpandedPost(
+                post.getPostId(), // postId
+                post.getContent(), // content
+                post.getPostDate(), // postDate
+                post.getUser(), // user
+                post.getHeartsCount(), // heartsCount
+                post.getCommentsCount(), // commentsCount
+                post.getHearted(), // isHearted
+                post.isBookmarked(), // isBookmarked
+                comments // comments
+        );
+
+        mv.addObject("expandedPost", expandedPost);
 
         // If an error occured, you can set the following property with the
         // error message to show the error message to the user.
