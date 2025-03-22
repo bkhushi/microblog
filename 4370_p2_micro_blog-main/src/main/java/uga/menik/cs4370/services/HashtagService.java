@@ -4,9 +4,15 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.sql.DataSource;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -65,7 +71,7 @@ public class HashtagService {
                     Post post = new Post(
                             rs.getString("id"),
                             rs.getString("content"),
-                            rs.getString("created_at"),
+                            convertUTCtoEST(rs.getString("created_at")),
                             user,
                             rs.getInt("hearts_count"),
                             rs.getInt("comments_count"),
@@ -81,5 +87,15 @@ public class HashtagService {
         }
 
         return posts;
+    }
+
+    private String convertUTCtoEST(String utcTimestamp) {
+        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a");
+        LocalDateTime utcDateTime = LocalDateTime.parse(utcTimestamp, inputFormatter);
+        ZonedDateTime utcZoned = utcDateTime.atZone(ZoneId.of("UTC"));
+        ZonedDateTime estZoned = utcZoned.withZoneSameInstant(ZoneId.of("America/New_York"));
+
+        return estZoned.format(outputFormatter);
     }
 }

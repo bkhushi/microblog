@@ -4,10 +4,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.text.SimpleDateFormat;
+import java.sql.Timestamp;
 
 import javax.sql.DataSource;
 
@@ -53,8 +57,9 @@ public class CommentService {
                 Comment comment = new Comment(
                         rs.getString("commentId"),
                         rs.getString("commentText"),
-                        formattedDate, // Use formatted date string
-                        user);
+                        convertUTCtoEST(rs.getString("commentDate")),
+                        user
+                );
                 comments.add(comment);
 
             }
@@ -62,5 +67,15 @@ public class CommentService {
             throw new RuntimeException("Error fetching comments for post", e);
         }
         return comments;
+    }
+
+    private String convertUTCtoEST(String utcTimestamp) {
+        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a");
+        LocalDateTime utcDateTime = LocalDateTime.parse(utcTimestamp, inputFormatter);
+        ZonedDateTime utcZoned = utcDateTime.atZone(ZoneId.of("UTC"));
+        ZonedDateTime estZoned = utcZoned.withZoneSameInstant(ZoneId.of("America/New_York"));
+
+        return estZoned.format(outputFormatter);
     }
 }
