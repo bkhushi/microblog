@@ -4,6 +4,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +56,7 @@ public class ProfileService {
                     Post post = new Post(
                         rs.getString("postId"),
                         rs.getString("postText"),
-                        rs.getTimestamp("postDate").toLocalDateTime().format(DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a")),
+                        convertUTCtoEST(rs.getString("postDate")),
                         user,
                         rs.getInt("hearts_count"),
                         rs.getInt("comments_count"),
@@ -70,4 +73,13 @@ public class ProfileService {
         return postsByUser;
     }
 
+    private String convertUTCtoEST(String utcTimestamp) {
+        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a");
+        LocalDateTime utcDateTime = LocalDateTime.parse(utcTimestamp, inputFormatter);
+        ZonedDateTime utcZoned = utcDateTime.atZone(ZoneId.of("UTC"));
+        ZonedDateTime estZoned = utcZoned.withZoneSameInstant(ZoneId.of("America/New_York"));
+
+        return estZoned.format(outputFormatter);
+    }
 }

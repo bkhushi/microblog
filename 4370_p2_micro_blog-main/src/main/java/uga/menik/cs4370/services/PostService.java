@@ -4,6 +4,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -164,12 +167,12 @@ public class PostService {
                             rs.getString("userId"),
                             rs.getString("firstName"),
                             rs.getString("lastName"));
-
+                    
+                    
                     Post post = new Post(
                             rs.getString("id"),
                             rs.getString("content"),
-                            rs.getTimestamp("created_at").toLocalDateTime()
-                                    .format(DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a")),
+                            convertUTCtoEST(rs.getString("created_at")),
                             user,
                             rs.getInt("hearts_count"),
                             rs.getInt("comments_count"),
@@ -189,7 +192,7 @@ public class PostService {
         String currUserId = userService.getLoggedInUser().getUserId();
         Post post = getPostById(postId, currUserId);
         List<Comment> commentsForPost = commentService.getCommentsForPost(postId);
-
+        
         return List.of(new ExpandedPost(
                 post.getPostId(),
                 post.getContent(),
@@ -226,7 +229,7 @@ public class PostService {
                 post = new Post(
                         rs.getString("id"),
                         rs.getString("content"),
-                        rs.getString("created_at"),
+                        convertUTCtoEST(rs.getString("created_at")),
                         user,
                         rs.getInt("heartsCount"),
                         rs.getInt("commentsCount"),
@@ -240,6 +243,17 @@ public class PostService {
 
         return post;
     }
+
+    private String convertUTCtoEST(String utcTimestamp) {
+        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a");
+        LocalDateTime utcDateTime = LocalDateTime.parse(utcTimestamp, inputFormatter);
+        ZonedDateTime utcZoned = utcDateTime.atZone(ZoneId.of("UTC"));
+        ZonedDateTime estZoned = utcZoned.withZoneSameInstant(ZoneId.of("America/New_York"));
+
+        return estZoned.format(outputFormatter);
+    }
+
 
     /**
      * Retrieves posts containing specified hashtags.
