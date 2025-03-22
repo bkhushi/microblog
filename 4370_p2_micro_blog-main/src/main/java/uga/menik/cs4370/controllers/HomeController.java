@@ -7,9 +7,7 @@ package uga.menik.cs4370.controllers;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -19,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
-import uga.menik.cs4370.models.Comment;
 import uga.menik.cs4370.models.Post;
 import uga.menik.cs4370.services.PostService;
 import uga.menik.cs4370.services.UserService;
@@ -74,9 +71,9 @@ public class HomeController {
 
     @GetMapping
     public ModelAndView webpage(@RequestParam(name = "error", required = false) String error) {
-       /*  ModelAndView mv = new ModelAndView("home_page");
+       ModelAndView mv = new ModelAndView("home_page");
 
-        String currentUserId = userService.getLoggedInUser().getUserId();
+        //String currentUserId = userService.getLoggedInUser().getUserId();
         // Fetch posts from followed users
         String currUserId = userService.getLoggedInUser().getUserId();
         List<Post> posts = postService.getPostsFromFollowedUsers(currUserId);
@@ -87,26 +84,8 @@ public class HomeController {
         }
 
         mv.addObject("errorMessage", error);
-        return mv; */
+        return mv; 
 
-         ModelAndView mv = new ModelAndView("home_page");
-
-        String currentUserId = userService.getLoggedInUser().getUserId();
-        List<Post> posts = postService.getPostsFromFollowedUsers(currentUserId);
-
-        mv.addObject("posts", posts);
-
-        // Store comments separately in a map
-        Map<String, List<Comment>> postComments = new HashMap<>();
-        for (Post post : posts) {
-            postComments.put(post.getPostId(), postService.getCommentsForPost(post.getPostId()));
-        }
-
-        mv.addObject("postComments", postComments);
-        mv.addObject("isNoContent", posts.isEmpty());
-        mv.addObject("errorMessage", error);
-
-        return mv;
     }
 
     /**

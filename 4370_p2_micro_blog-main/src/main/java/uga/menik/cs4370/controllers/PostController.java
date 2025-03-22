@@ -7,7 +7,6 @@ package uga.menik.cs4370.controllers;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -18,9 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
-import uga.menik.cs4370.models.Comment;
 import uga.menik.cs4370.models.ExpandedPost;
-import uga.menik.cs4370.models.Post;
 import uga.menik.cs4370.services.PostService;
 import uga.menik.cs4370.services.UserService;
 
@@ -56,7 +53,7 @@ public class PostController {
             @RequestParam(name = "error", required = false) String error) {
         System.out.println("The user is attempting to view post with id: " + postId);
         // See notes on ModelAndView in BookmarksController.java.
-        ModelAndView mv = new ModelAndView("posts_page");
+        /* ModelAndView mv = new ModelAndView("posts_page");
         
         String postUserId = postService.getUserIdFromPostId(postId);
         //String currUserId = userService.getLoggedInUser().getUserId();
@@ -89,6 +86,21 @@ public class PostController {
         // Enable the following line if you want to show no content message.
         // Do that if your content list is empty.
         // mv.addObject("isNoContent", true);
+        return mv; */
+
+        ModelAndView mv = new ModelAndView("posts_page");
+
+        // Fetch post with comments in one call
+        ExpandedPost expandedPost = postService.getExpandedPost(postId);
+
+        if (expandedPost == null) {
+            mv.addObject("errorMessage", "Post not found.");
+            return mv;
+        }
+
+        mv.addObject("expandedPost", expandedPost);
+        mv.addObject("errorMessage", error);
+
         return mv;
     }
 

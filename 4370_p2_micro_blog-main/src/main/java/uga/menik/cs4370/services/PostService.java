@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import uga.menik.cs4370.models.Comment;
+import uga.menik.cs4370.models.ExpandedPost;
 import uga.menik.cs4370.models.Post;
 import uga.menik.cs4370.models.User;
 
@@ -256,7 +257,159 @@ public class PostService {
             throw new RuntimeException("Error fetching userId from postId", e);
         }
         return null; // Return null if postId doesn't exist
+    } 
+
+    public ExpandedPost getExpandedPost(String postId) {
+        ExpandedPost expandedPost = null;
+        List<Comment> comments = new ArrayList<>();
+    
+        String sql = "SELECT p.id AS postId, p.content AS postText, p.created_at AS postDate, " +
+                     "       u.userId AS postUserId, u.firstName AS postFirstName, u.lastName AS postLastName, " +
+                     "       (SELECT COUNT(*) FROM heart h WHERE h.postId = p.id) AS heartsCount, " +
+                     "       (SELECT COUNT(*) FROM comment c WHERE c.postId = p.id) AS commentsCount, " +
+                     "       (SELECT EXISTS (SELECT 1 FROM heart h WHERE h.postId = p.id AND h.userId = ?)) AS isHearted, " +
+                     "       (SELECT EXISTS (SELECT 1 FROM bookmark b WHERE b.postId = p.id AND b.userId = ?)) AS isBookmarked, " +
+                     "       c.commentId, c.commentText, c.commentDate, " +
+                     "       cu.userId AS commentUserId, cu.firstName AS commentFirstName, cu.lastName AS commentLastName " +
+                     "FROM post p " +
+                     "JOIN user u ON p.user_id = u.userId " +
+                     "LEFT JOIN comment c ON p.id = c.postId " +
+                     "LEFT JOIN user cu ON c.userId = cu.userId " +
+                     "WHERE p.id = ? " +
+                     "ORDER BY c.commentDate ASC";
+    
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+    
+            String userId = userService.getLoggedInUser().getUserId();
+    
+            stmt.setString(1, userId);  // Set userId for heart check
+            stmt.setString(2, userId);  // Set userId for bookmark check
+            stmt.setString(3, postId);  // Set postId
+    
+            ResultSet rs = stmt.executeQuery();
+    
+            // Ensure post is initialized even if there are no comments
+            if (!rs.isBeforeFirst()) { // No results
+                expandedPost = new ExpandedPost(postId, null, null, null, 0, 0, false, false, new ArrayList<>());
+            }
+    
+            while (rs.next()) {
+                if (expandedPost == null) {  // Initialize only once
+                    User postUser = new User(
+                        rs.getString("postUserId"),
+                        rs.getString("postFirstName"),
+                        rs.getString("postLastName")
+                    );
+    
+                    expandedPost = new ExpandedPost(
+                        rs.getString("postId"),
+                        rs.getString("postText"),
+                        rs.getString("postDate"),
+                        postUser,
+                        rs.getInt("heartsCount"),
+                        rs.getInt("commentsCount"),
+                        rs.getBoolean("isHearted"),
+                        rs.getBoolean("isBookmarked"),
+                        new ArrayList<>()
+                    );
+                }
+    
+                if (rs.getString("commentId") != null) {  // If there is a comment
+                    User commentUser = new User(
+                        rs.getString("commentUserId"),
+                        rs.getString("commentFirstName"),
+                        rs.getString("commentLastName")
+                    );
+    
+                    Comment comment = new Comment(
+                        rs.getString("commentId"),
+                        rs.getString("commentText"),
+                        rs.getString("commentDate"),
+                        commentUser
+                    );
+    
+                    expandedPost.getComments().add(comment);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching post with comments", e);
+        }
+    
+        return expandedPost;
     }
+    
+    
+    
+
+    /* public ExpandedPost getPostWithComments(String postId) {
+        ExpandedPost post = null;
+        List<Comment> comments = new ArrayList<>();
+    
+        String sql = "SELECT p.postId, p.postText, p.postDate, p.hearts_count, p.comments_count, p.is_hearted, p.is_bookmarked, " +
+                     "       u.userId AS postUserId, u.firstName AS postFirstName, u.lastName AS postLastName, " +
+                     "       c.commentId, c.commentText, c.commentDate, " +
+                     "       cu.userId AS commentUserId, cu.firstName AS commentFirstName, cu.lastName AS commentLastName " +
+                     "FROM post p " +
+                     "JOIN user u ON p.userId = u.userId " +
+                     "LEFT JOIN comment c ON p.postId = c.postId " +
+                     "LEFT JOIN user cu ON c.userId = cu.userId " +
+                     "WHERE p.postId = ? " +
+                     "ORDER BY c.commentDate ASC";
+    
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+    
+            stmt.setString(1, postId);
+            ResultSet rs = stmt.executeQuery();
+    
+            while (rs.next()) {
+                if (post == null) { // Create the post object only once
+                    User postUser = new User(
+                            rs.getString("postUserId"),
+                            rs.getString("postFirstName"),
+                            rs.getString("postLastName")
+                    );
+    
+                    post = new ExpandedPost(
+                            rs.getString("postId"),
+                            rs.getString("postText"),
+                            rs.getTimestamp("postDate").toLocalDateTime().format(DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a")),
+                            postUser,
+                            rs.getInt("hearts_count"),
+                            rs.getInt("comments_count"),
+                            rs.getBoolean("is_hearted"),
+                            rs.getBoolean("is_bookmarked"),
+                            comments  // Initialize empty list, will populate below
+                    );
+                }
+    
+                // Process comments if they exist
+                if (rs.getString("commentId") != null) {
+                    User commentUser = new User(
+                            rs.getString("commentUserId"),
+                            rs.getString("commentFirstName"),
+                            rs.getString("commentLastName")
+                    );
+    
+                    Comment comment = new Comment(
+                            rs.getString("commentId"),
+                            rs.getString("commentText"),
+                            rs.getTimestamp("commentDate").toLocalDateTime().format(DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a")),
+                            commentUser
+                    );
+    
+                    comments.add(comment);
+                }
+            }
+    
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching post and comments", e);
+        }
+    
+        return post;
+    }
+     */
 
     /**
      * Retrieves posts containing specified hashtags.

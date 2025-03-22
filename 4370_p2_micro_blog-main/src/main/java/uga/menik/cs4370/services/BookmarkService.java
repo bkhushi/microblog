@@ -34,7 +34,7 @@ public class BookmarkService {
                 "FROM post p " +
                 "JOIN bookmark b ON p.id = b.postId " +
                 "JOIN user u ON p.user_id = u.userId " +
-                "WHERE b.userId != ? " +
+                "WHERE b.userId = ? " +
                 "ORDER BY p.created_at DESC";
 
         try (Connection conn = dataSource.getConnection();
