@@ -22,7 +22,7 @@ public class BookmarkService {
     @Autowired
     private DataSource dataSource;
 
-    public List<Post> getBookmarkedPosts(String userIdToExclude) {
+    public List<Post> getBookmarkedPosts(String userId) {
         List<Post> posts = new ArrayList<>();
 
         final String sql = "SELECT DISTINCT p.id AS postId, p.content AS postText, p.created_at AS postDate, " +
@@ -34,14 +34,14 @@ public class BookmarkService {
                 "FROM post p " +
                 "JOIN bookmark b ON p.id = b.postId " +
                 "JOIN user u ON p.user_id = u.userId " +
-                "WHERE b.userId != ? " +
+                "WHERE b.userId = ? " +
                 "ORDER BY p.created_at DESC";
 
         try (Connection conn = dataSource.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, userIdToExclude); // For is_hearted check
-            pstmt.setString(2, userIdToExclude); // To exclude user's own posts
+            pstmt.setString(1, userId); // For is_hearted check
+            pstmt.setString(2, userId); // For user's bookmarks
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
