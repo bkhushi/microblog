@@ -16,39 +16,82 @@ public class PostService {
     private DataSource dataSource;
     private UserService userService;
 
+    public PostService(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
     public void likePost(String userId, String postId) {
-        String sql = "INSERT INTO post_likes (user_id, post_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE user_id = user_id";
+        final String sql = "INSERT INTO heart (userId, postId) VALUES (?, ?)";
+        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-        try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, userId);
-            stmt.setString(2, postId);
-            stmt.executeUpdate();
-            System.out.println("Success: liked post.");
+            pstmt.setString(1, userId);
+            pstmt.setString(2, postId);
+            pstmt.executeUpdate();
+            System.out.println("Success: liked post");
 
         } catch (SQLException e) {
-            throw new RuntimeException("Error liking post.", e);
+            throw new RuntimeException("Error liking post: ", e);
         }
     }
 
     public void unlikePost(String userId, String postId) {
-        String sql = "DELETE FROM post_likes WHERE user_id = ? AND post_id = ?";
+        final String sql = "DELETE FROM heart WHERE userId = ? AND postId = ?";
+
+        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, userId);
+            pstmt.setString(2, postId);
+            pstmt.executeUpdate();
+            System.out.println("Success: unliked post");
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error unliking post: ", e);
+        }
+    }
+
+    public void bookmark(String userId, String postId) {
+        final String sql = "INSERT INTO bookmark (userId, postId) VALUES (?, ?)";
+        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, userId);
+            pstmt.setString(2, postId);
+            pstmt.executeUpdate();
+            System.out.println("Success: bookmarked post");
+        } catch (SQLException e) {
+            throw new RuntimeException("Error bookmarking post: ", e);
+        }
+    }
+
+    public void unBookmark(String userId, String postId) {
+        final String sql = "DELETE from bookmark WHERE userId = ? AND postId = ?";
+        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, userId);
+            pstmt.setString(2, postId);
+            pstmt.executeUpdate();
+            System.out.println("Success: bookmarked post");
+        } catch (SQLException e) {
+            throw new RuntimeException("Error bookmarking post: ", e);
+        }
+    }
+
+    public void addComment(String userId, String postId, String commentText) {
+        String sql = "INSERT INTO comment (postId, userId, commentText) VALUES (?, ?, ?)";
 
         try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, userId);
-            stmt.setString(2, postId);
-            stmt.executeUpdate();
-            System.out.println("Success: unliked post.");
+            stmt.setString(1, postId);
+            stmt.setString(2, userId);
+            stmt.setString(3, commentText);
 
+            stmt.executeUpdate();
+            System.out.println("Success: commented on post");
         } catch (SQLException e) {
-            throw new RuntimeException("Error unliking post.", e);
+            throw new RuntimeException("Error commenting on post", e);
         }
     }
 
     /**
-     * Creates a new post for the logged-in user.
-     * Supports hashtags, which are automatically extracted and linked.
+     * Creates a new post for the logged-in user. Supports hashtags, which are
+     * automatically extracted and linked.
      */
     public boolean createPost(String content, String userId) {
         /* 
@@ -56,15 +99,14 @@ public class PostService {
         if (loggedInUser == null) {
             throw new RuntimeException("User is not authenticated.");
         }
-            */
+         */
         if (userId == null || userId.isEmpty()) {
             throw new RuntimeException("User ID is required to create a post.");
         }
 
         final String sql = "INSERT INTO post (content, user_id) VALUES (?, ?)";
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, content);
             pstmt.setString(2, userId);
             //pstmt.setString(2, userId);
@@ -77,6 +119,7 @@ public class PostService {
 
     /**
      * Retrieves posts containing specified hashtags.
+     *
      * @param hashtags List of hashtags to search for.
      * @return List of matching posts.
      */
@@ -118,9 +161,9 @@ public class PostService {
         }
         return posts;
     } */
-
     /**
      * Retrieves posts from users that the logged-in user follows.
+     *
      * @return List of posts ordered from most recent to oldest.
      */
     /* public List<Post> getPostsFromFollowedUsers(String userId) {
@@ -167,5 +210,4 @@ public class PostService {
         return posts;
     }
      */
-    
 }
