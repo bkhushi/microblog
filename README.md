@@ -8,7 +8,7 @@ Khushi Bhatamrekar:
 
 Aditi Chiluguri:
 
-Catherine Chu:
+Catherine Chu: Implemented features of post interactions, including liking, unliking, bookmarking, and adding comments. Enhanced the home page to display posts from followed users. Developed the expanded post view to provide a detailed display of individual posts and associated interactions.
 
 Grace Ryoo:
 
@@ -32,3 +32,5 @@ Open the browser and navigate to the following URL:
 http://localhost:8081/
 
 Create an account and login.
+
+For the homepage, the posts that show are from the users the logged in user follows as well as the logged in user's own posts. 
