@@ -7,6 +7,8 @@ import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 
 import javax.sql.DataSource;
 
@@ -223,10 +225,18 @@ public class PostService {
             if (rs.next()) {
                 User user = new User(rs.getString("userId"), rs.getString("firstName"), rs.getString("lastName"));
 
+                // Format the date
+                String formattedDate = "Never";
+                Timestamp timestamp = rs.getTimestamp("created_at");
+                if (timestamp != null) {
+                    SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy, hh:mm a");
+                    formattedDate = sdf.format(timestamp);
+                }
+
                 post = new Post(
                         rs.getString("id"),
                         rs.getString("content"),
-                        rs.getString("created_at"),
+                        formattedDate, // Use formatted date here
                         user,
                         rs.getInt("heartsCount"),
                         rs.getInt("commentsCount"),
