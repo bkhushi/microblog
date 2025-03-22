@@ -57,10 +57,11 @@ public class PostController {
         System.out.println("The user is attempting to view post with id: " + postId);
         // See notes on ModelAndView in BookmarksController.java.
         ModelAndView mv = new ModelAndView("posts_page");
-
-        String currUserId = userService.getLoggedInUser().getUserId();
+        
+        String postUserId = postService.getUserIdFromPostId(postId);
+        //String currUserId = userService.getLoggedInUser().getUserId();
         // Fetch the post and its comments from the database
-        Post post = postService.getPostById(postId, currUserId);  // Fetch the post by ID from the service
+        Post post = postService.getPostById(postId, postUserId);  // Fetch the post by ID from the service
         List<Comment> comments = postService.getCommentsForPost(postId);  // Fetch comments for the post
 
         // Create an ExpandedPost object or use your existing method to combine post and comments

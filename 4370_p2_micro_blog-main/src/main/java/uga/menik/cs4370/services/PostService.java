@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -156,7 +157,7 @@ public class PostService {
                 Post post = new Post(
                         rs.getString("id"),
                         rs.getString("content"),
-                        rs.getString("created_at"),
+                        rs.getTimestamp("created_at").toLocalDateTime().format(DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a")),
                         user,
                         rs.getInt("heartsCount"),
                         rs.getInt("commentsCount"),
@@ -207,7 +208,7 @@ public class PostService {
             throw new RuntimeException("Error fetching post by id", e);
         }
 
-        return post;
+        return post; 
     }
 
     public List<Comment> getCommentsForPost(String postId) {
@@ -215,7 +216,8 @@ public class PostService {
         String sql = "SELECT c.commentId, c.commentText, c.commentDate, c.postId, u.userId, u.username, u.firstName, u.lastName "
                 + "FROM comment c "
                 + "JOIN user u ON c.userId = u.userId "
-                + "WHERE c.postId = ?";
+                + "WHERE c.postId = ?"
+                + "ORDER BY c.commentDate ASC";
 
         try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -227,7 +229,8 @@ public class PostService {
                 Comment comment = new Comment(
                         rs.getString("commentId"),
                         rs.getString("commentText"),
-                        rs.getString("createdDate"),
+                        //rs.getString("createdDate"),
+                        rs.getString("commentDate"),
                         user
                 );
                 comments.add(comment);
@@ -237,6 +240,22 @@ public class PostService {
         }
 
         return comments;
+    }
+
+    public String getUserIdFromPostId(String postId) {
+        String sql = "SELECT user_id FROM post WHERE id = ?";
+    
+        try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, postId);
+            ResultSet rs = stmt.executeQuery();
+    
+            if (rs.next()) {
+                return rs.getString("user_id"); // Return the userId linked to this post
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching userId from postId", e);
+        }
+        return null; // Return null if postId doesn't exist
     }
 
     /**

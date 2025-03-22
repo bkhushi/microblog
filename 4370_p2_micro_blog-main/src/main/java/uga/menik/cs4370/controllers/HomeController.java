@@ -7,7 +7,9 @@ package uga.menik.cs4370.controllers;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -17,10 +19,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
+import uga.menik.cs4370.models.Comment;
 import uga.menik.cs4370.models.Post;
 import uga.menik.cs4370.services.PostService;
 import uga.menik.cs4370.services.UserService;
-import uga.menik.cs4370.utility.Utility;
 
 /**
  * This controller handles the home page and some of it's sub URLs.
@@ -48,7 +50,7 @@ public class HomeController {
      * parameter can be shown to the user as an error message. See notes in
      * HashtagSearchController.java regarding URL parameters.
      */
-    @GetMapping("/sample")
+   /*  @GetMapping("/sample")
     public ModelAndView sample(@RequestParam(name = "error", required = false) String error) {
         // See notes on ModelAndView in BookmarksController.java.
         ModelAndView mv = new ModelAndView("home_page");
@@ -68,11 +70,11 @@ public class HomeController {
         // Do that if your content list is empty.
         // mv.addObject("isNoContent", true);
         return mv;
-    }
+    } */
 
     @GetMapping
     public ModelAndView webpage(@RequestParam(name = "error", required = false) String error) {
-        ModelAndView mv = new ModelAndView("home_page");
+       /*  ModelAndView mv = new ModelAndView("home_page");
 
         String currentUserId = userService.getLoggedInUser().getUserId();
         // Fetch posts from followed users
@@ -85,6 +87,25 @@ public class HomeController {
         }
 
         mv.addObject("errorMessage", error);
+        return mv; */
+
+         ModelAndView mv = new ModelAndView("home_page");
+
+        String currentUserId = userService.getLoggedInUser().getUserId();
+        List<Post> posts = postService.getPostsFromFollowedUsers(currentUserId);
+
+        mv.addObject("posts", posts);
+
+        // Store comments separately in a map
+        Map<String, List<Comment>> postComments = new HashMap<>();
+        for (Post post : posts) {
+            postComments.put(post.getPostId(), postService.getCommentsForPost(post.getPostId()));
+        }
+
+        mv.addObject("postComments", postComments);
+        mv.addObject("isNoContent", posts.isEmpty());
+        mv.addObject("errorMessage", error);
+
         return mv;
     }
 
