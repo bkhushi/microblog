@@ -18,6 +18,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.cs4370.models.Post;
 import uga.menik.cs4370.services.HashtagService;
+import uga.menik.cs4370.services.UserService;
 
 /**
  * Handles /hashtagsearch URL and possibly others.
@@ -28,11 +29,14 @@ import uga.menik.cs4370.services.HashtagService;
 public class HashtagSearchController {
 
     private final HashtagService hashtagService;
+    private final UserService userService;
 
     @Autowired
-    public HashtagSearchController(HashtagService hashtagService) {
+    public HashtagSearchController(HashtagService hashtagService, UserService userService) {
         this.hashtagService = hashtagService;
+        this.userService = userService;
     }
+
     /**
      * This function handles the /hashtagsearch URL itself.
      * This URL can process a request parameter with name hashtags.
@@ -42,22 +46,17 @@ public class HashtagSearchController {
      */
     @GetMapping
     public ModelAndView webpage(@RequestParam(name = "hashtags") String hashtags) {
-        System.out.println("User is searching: " + hashtags);
-
-        // See notes on ModelAndView in BookmarksController.java.
         ModelAndView mv = new ModelAndView("posts_page");
 
-        // Following line populates sample data.
-        // You should replace it with actual data from the database.
         try {
-            // Parse hashtags from input string
-            List<String> hashtagList = Arrays.asList(hashtags.split("\\s+"))
-                .stream()
-                .map(tag -> tag.startsWith("#") ? tag.substring(1) : tag)
-                .collect(Collectors.toList());
+            // Get current user ID
+            String currentUserId = userService.getLoggedInUser().getUserId();
 
-            // Get matching posts
-            List<Post> posts = hashtagService.getPostsByHashtags(hashtagList);
+            List<String> hashtagList = Arrays.stream(hashtags.split("\\s+"))
+                    .map(tag -> tag.startsWith("#") ? tag : "#" + tag)
+                    .collect(Collectors.toList());
+
+            List<Post> posts = hashtagService.getPostsByHashtags(hashtagList, currentUserId);
             mv.addObject("posts", posts);
 
             if (posts.isEmpty()) {
@@ -66,17 +65,8 @@ public class HashtagSearchController {
         } catch (Exception e) {
             mv.addObject("errorMessage", "Error searching hashtags: " + e.getMessage());
         }
-        
-        // If an error occured, you can set the following property with the
-        // error message to show the error message to the user.
-        // String errorMessage = "Some error occured!";
-        // mv.addObject("errorMessage", errorMessage);
 
-        // Enable the following line if you want to show no content message.
-        // Do that if your content list is empty.
-        // mv.addObject("isNoContent", true);
-        
         return mv;
     }
-    
+
 }

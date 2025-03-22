@@ -19,10 +19,10 @@ public class HashtagService {
     @Autowired
     private DataSource dataSource;
 
-    public List<Post> getPostsByHashtags(List<String> hashtags) {
+    public List<Post> getPostsByHashtags(List<String> hashtags, String currentUserId) {
         List<Post> posts = new ArrayList<>();
 
-        // Build WHERE clause to match ALL hashtags (using AND)
+        // Build WHERE clause to match ALL hashtags
         List<String> conditions = new ArrayList<>();
         for (String hashtag : hashtags) {
             conditions.add("p.content LIKE ?");
@@ -30,9 +30,11 @@ public class HashtagService {
         String whereClause = String.join(" AND ", conditions);
 
         String query = "SELECT p.id, p.content, p.created_at, p.user_id, " +
-                "u.userId, u.username, u.firstName, u.lastName, " +
+                "u.userId, u.firstName, u.lastName, " +
                 "(SELECT COUNT(*) FROM heart h WHERE h.postId = p.id) as hearts_count, " +
-                "(SELECT COUNT(*) FROM comment c WHERE c.postId = p.id) as comments_count " +
+                "(SELECT COUNT(*) FROM comment c WHERE c.postId = p.id) as comments_count, " +
+                "EXISTS(SELECT 1 FROM heart h WHERE h.postId = p.id AND h.userId = ?) as is_hearted, " +
+                "EXISTS(SELECT 1 FROM bookmark b WHERE b.postId = p.id AND b.userId = ?) as is_bookmarked " +
                 "FROM post p " +
                 "JOIN user u ON p.user_id = u.userId " +
                 "WHERE " + whereClause + " " +
@@ -41,14 +43,16 @@ public class HashtagService {
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(query)) {
 
-            // Set each hashtag as a parameter
-            for (int i = 0; i < hashtags.size(); i++) {
-                // Add # if not present and wrap with wildcards
-                String hashtag = hashtags.get(i);
-                if (!hashtag.startsWith("#")) {
-                    hashtag = "#" + hashtag;
-                }
-                stmt.setString(i + 1, "%" + hashtag + "%");
+            int paramIndex = 1;
+
+            // Set user ID for heart and bookmark checks
+            stmt.setString(paramIndex++, currentUserId);
+            stmt.setString(paramIndex++, currentUserId);
+
+            // Set hashtag parameters
+            for (String hashtag : hashtags) {
+                String searchTag = hashtag.startsWith("#") ? hashtag : "#" + hashtag;
+                stmt.setString(paramIndex++, "%" + searchTag + "%");
             }
 
             try (ResultSet rs = stmt.executeQuery()) {
@@ -65,8 +69,8 @@ public class HashtagService {
                             user,
                             rs.getInt("hearts_count"),
                             rs.getInt("comments_count"),
-                            false, // isHearted
-                            false // isBookmarked
+                            rs.getBoolean("is_hearted"), // Get actual heart status
+                            rs.getBoolean("is_bookmarked") // Get actual bookmark status
                     );
 
                     posts.add(post);
