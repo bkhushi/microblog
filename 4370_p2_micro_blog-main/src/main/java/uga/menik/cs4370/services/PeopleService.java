@@ -33,29 +33,21 @@ public class PeopleService {
     private DataSource dataSource;
 
     public List<FollowableUser> getFollowableUsers(String userIdToExclude) {
-        // Write an SQL query to find the users that are not the current user.
-
-        // Run the query with a datasource.
-        // See UserService.java to see how to inject DataSource instance and
-        // use it to run a query.
-        // Use the query result to create a list of followable users.
-        // See UserService.java to see how to access rows and their attributes
-        // from the query result.
-        // Check the following createSampleFollowableUserList function to see 
-        // how to create a list of FollowableUsers.
-        // Replace the following line and return the list you created.
         List<FollowableUser> followableUsers = new ArrayList<>();
 
-        String query = "SELECT u.userId, u.username, u.firstName, u.lastName, "
-                + "CASE WHEN f.follower_id IS NOT NULL THEN true ELSE false END as is_followed "
-                + "FROM user u "
-                + "LEFT JOIN follow f ON f.following_id = u.userId AND f.follower_id = ? "
-                + "WHERE u.userId != ?";
+        String query = "SELECT u.userId, u.username, u.firstName, u.lastName, " +
+                "CASE WHEN f.follower_id IS NOT NULL THEN true ELSE false END as is_followed, " +
+                "(SELECT created_at FROM post WHERE user_id = u.userId ORDER BY created_at DESC LIMIT 1) as last_post_time "
+                +
+                "FROM user u " +
+                "LEFT JOIN follow f ON f.following_id = u.userId AND f.follower_id = ? " +
+                "WHERE u.userId != ?";
 
-        try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(query)) {
 
-            stmt.setString(1, userIdToExclude); // For checking follow status
-            stmt.setString(2, userIdToExclude); // For excluding current user
+            stmt.setString(1, userIdToExclude);
+            stmt.setString(2, userIdToExclude);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -64,13 +56,20 @@ public class PeopleService {
                     String lastName = rs.getString("lastName");
                     boolean isFollowed = rs.getBoolean("is_followed");
 
+                    // Format the last post time
+                    String lastPostTime = "Never";
+                    java.sql.Timestamp timestamp = rs.getTimestamp("last_post_time");
+                    if (timestamp != null) {
+                        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("MMM dd, yyyy, hh:mm a");
+                        lastPostTime = sdf.format(timestamp);
+                    }
+
                     FollowableUser user = new FollowableUser(
                             userId,
                             firstName,
                             lastName,
-                            isFollowed, // Use the actual follow status
-                            "Never" // Default last active date
-                    );
+                            isFollowed,
+                            lastPostTime);
 
                     followableUsers.add(user);
                 }
