@@ -1,8 +1,8 @@
 /**
-Copyright (c) 2024 Sami Menik, PhD. All rights reserved.
-
-This is a project developed by Dr. Menik to give the students an opportunity to apply database concepts learned in the class in a real world project. Permission is granted to host a running version of this software and to use images or videos of this work solely for the purpose of demonstrating the work to potential employers. Any form of reproduction, distribution, or transmission of the software's source code, in part or whole, without the prior written consent of the copyright owner, is strictly prohibited.
-*/
+ * Copyright (c) 2024 Sami Menik, PhD. All rights reserved.
+ *
+ *  *This is a project developed by Dr. Menik to give the students an opportunity to apply database concepts learned in the class in a real world project. Permission is granted to host a running version of this software and to use images or videos of this work solely for the purpose of demonstrating the work to potential employers. Any form of reproduction, distribution, or transmission of the software's source code, in part or whole, without the prior written consent of the copyright owner, is strictly prohibited.
+ */
 package uga.menik.cs4370.controllers;
 
 import java.net.URLEncoder;
@@ -40,12 +40,13 @@ public class HomeController {
         this.postService = postService;
         this.userService = userService;
     }
+
     /**
      * This is the specific function that handles the root URL itself.
-     * 
-     * Note that this accepts a URL parameter called error.
-     * The value to this parameter can be shown to the user as an error message.
-     * See notes in HashtagSearchController.java regarding URL parameters.
+     *
+     * Note that this accepts a URL parameter called error. The value to this
+     * parameter can be shown to the user as an error message. See notes in
+     * HashtagSearchController.java regarding URL parameters.
      */
     @GetMapping("/sample")
     public ModelAndView sample(@RequestParam(name = "error", required = false) String error) {
@@ -66,61 +67,54 @@ public class HomeController {
         // Enable the following line if you want to show no content message.
         // Do that if your content list is empty.
         // mv.addObject("isNoContent", true);
-
         return mv;
     }
-    
+
     @GetMapping
     public ModelAndView webpage(@RequestParam(name = "error", required = false) String error) {
         ModelAndView mv = new ModelAndView("home_page");
-    
-        
+
         String currentUserId = userService.getLoggedInUser().getUserId();
         // Fetch posts from followed users
-        List<Post> posts = Utility.createSamplePostsListWithoutComments();
-        //List<Post> posts = postService.getPostsFromFollowedUsers(currentUserId);
+        String currUserId = userService.getLoggedInUser().getUserId();
+        List<Post> posts = postService.getPostsFromFollowedUsers(currUserId);
         mv.addObject("posts", posts);
-    
+
         if (posts.isEmpty()) {
             mv.addObject("isNoContent", true);
         }
-    
+
         mv.addObject("errorMessage", error);
         return mv;
     }
 
-
     /**
-     * This function handles the /createpost URL.
-     * This handles a post request that is going to be a form submission.
-     * The form for this can be found in the home page. The form has a
-     * input field with name = posttext. Note that the @RequestParam
-     * annotation has the same name. This makes it possible to access the value
-     * from the input from the form after it is submitted.
+     * This function handles the /createpost URL. This handles a post request
+     * that is going to be a form submission. The form for this can be found in
+     * the home page. The form has a input field with name = posttext. Note that
+     * the @RequestParam annotation has the same name. This makes it possible to
+     * access the value from the input from the form after it is submitted.
      */
     @PostMapping("/createpost")
     public String createPost(@RequestParam(name = "posttext") String postText) {
         System.out.println("User is creating post: " + postText);
 
-
         // Get the current logged-in user ID
         //User loggedInUser = userService.getLoggedInUser();
         //if (loggedInUser == null) {
         //    String message = URLEncoder.encode("User is not authenticated.", StandardCharsets.UTF_8);
-          //  return "redirect:/?error=" + message;
+        //  return "redirect:/?error=" + message;
         //}
-
         String currentUserId = userService.getLoggedInUser().getUserId();
         boolean success = postService.createPost(postText, currentUserId);
-        
 
         if (success) {
             return "redirect:/"; // Redirect ensures all posts are shown
         }
 
-    // Redirect the user with an error message if there was an error.
-    String message = URLEncoder.encode("Failed to create the post. Please try again.", StandardCharsets.UTF_8);
-    return "redirect:/?error=" + message;
+        // Redirect the user with an error message if there was an error.
+        String message = URLEncoder.encode("Failed to create the post. Please try again.", StandardCharsets.UTF_8);
+        return "redirect:/?error=" + message;
 
 
         /*
@@ -132,9 +126,7 @@ public class HomeController {
             return "redirect:/";
             //return posts;
         }
-            */
-        
-
+         */
         // Redirect the user with an error message if there was an error.
         //String message = URLEncoder.encode("Failed to create the post. Please try again.", StandardCharsets.UTF_8);
         //return "redirect:/?error=" + message;
