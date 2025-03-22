@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
-import uga.menik.cs4370.models.Comment;
 import uga.menik.cs4370.models.ExpandedPost;
 import uga.menik.cs4370.models.Post;
 import uga.menik.cs4370.services.PostService;
@@ -33,8 +32,6 @@ public class PostController {
 
     @Autowired
     private PostService postService;
-
-    @Autowired
     private UserService userService;
 
     @Autowired
@@ -55,39 +52,30 @@ public class PostController {
     public ModelAndView webpage(@PathVariable("postId") String postId,
             @RequestParam(name = "error", required = false) String error) {
         System.out.println("The user is attempting to view post with id: " + postId);
-        // See notes on ModelAndView in BookmarksController.java.
+
         ModelAndView mv = new ModelAndView("posts_page");
 
         String currUserId = userService.getLoggedInUser().getUserId();
-        // Fetch the post and its comments from the database
-        Post post = postService.getPostById(postId, currUserId);  // Fetch the post by ID from the service
-        List<Comment> comments = postService.getCommentsForPost(postId);  // Fetch comments for the post
+        // Fetch the post from the database
+        Post post = postService.getPostById(postId, currUserId); // Fetch the post by ID
 
-        // Create an ExpandedPost object or use your existing method to combine post and comments
-        // Assuming 'post' is the Post object that you retrieved from the database
-        ExpandedPost expandedPost = new ExpandedPost(
-                post.getPostId(), // postId
-                post.getContent(), // content
-                post.getPostDate(), // postDate
-                post.getUser(), // user
-                post.getHeartsCount(), // heartsCount
-                post.getCommentsCount(), // commentsCount
-                post.getHearted(), // isHearted
-                post.isBookmarked(), // isBookmarked
-                comments // comments
-        );
+        if (post == null) {
+            System.out.println("No post found for the given postId: " + postId);
+        } else {
+            System.out.println("Post retrieved: " + post.getPostId() + " with content: " + post.getContent());
+        }
 
-        mv.addObject("expandedPost", expandedPost);
+        // Fetch the comments for the post
+        List<ExpandedPost> posts = postService.getExpandedPost(postId);
+        System.out.println("ExpandedPost list: " + posts);
 
-        // If an error occured, you can set the following property with the
-        // error message to show the error message to the user.
-        // An error message can be optionally specified with a url query parameter too.
+        // Pass the post and comments directly to the view
+        mv.addObject("posts", posts);
+
+        // If an error occurred, you can set the following property with the error message
         String errorMessage = error;
         mv.addObject("errorMessage", errorMessage);
 
-        // Enable the following line if you want to show no content message.
-        // Do that if your content list is empty.
-        // mv.addObject("isNoContent", true);
         return mv;
     }
 

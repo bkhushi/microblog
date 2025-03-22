@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import uga.menik.cs4370.models.Comment;
+import uga.menik.cs4370.models.ExpandedPost;
 import uga.menik.cs4370.models.Post;
 import uga.menik.cs4370.models.User;
 
@@ -22,10 +23,12 @@ public class PostService {
     @Autowired
     private DataSource dataSource;
     private UserService userService;
+    private CommentService commentService;
 
-    public PostService(DataSource dataSource, UserService userService) {
+    public PostService(DataSource dataSource, UserService userService, CommentService commentService) {
         this.dataSource = dataSource;
         this.userService = userService;
+        this.commentService = commentService;
     }
 
     public void likePost(String userId, String postId) {
@@ -171,27 +174,45 @@ public class PostService {
         return posts;
     }
 
+    public List<ExpandedPost> getExpandedPost(String postId) {
+        String currUserId = userService.getLoggedInUser().getUserId();
+        Post post = getPostById(postId, currUserId);
+        List<Comment> commentsForPost = commentService.getCommentsForPost(postId);
+
+        return List.of(new ExpandedPost(
+                post.getPostId(),
+                post.getContent(),
+                post.getPostDate(),
+                post.getUser(),
+                post.getHeartsCount(),
+                commentsForPost.size(),
+                post.getHearted(),
+                post.isBookmarked(),
+                commentsForPost
+        ));
+    }
+
     public Post getPostById(String postId, String userId) {
         Post post = null;
+
         String sql = "SELECT p.id, p.content, p.created_at, u.userId, u.username, u.firstName, u.lastName, "
                 + "(SELECT COUNT(*) FROM heart h WHERE h.postId = p.id) AS heartsCount, "
                 + "(SELECT COUNT(*) FROM comment c WHERE c.postId = p.id) AS commentsCount, "
-                + "(SELECT EXISTS (SELECT 1 FROM heart h WHERE h.postId = p.id AND h.userId = ?)) AS isHearted, "
-                + "(SELECT EXISTS (SELECT 1 FROM bookmark b WHERE b.postId = p.id AND b.userId = ?)) AS isBookmarked "
+                + "EXISTS (SELECT 1 FROM heart h WHERE h.postId = p.id AND h.userId = ?) AS isHearted, "
+                + "EXISTS (SELECT 1 FROM bookmark b WHERE b.postId = p.id AND b.userId = ?) AS isBookmarked "
                 + "FROM post p "
                 + "JOIN user u ON p.user_id = u.userId "
                 + "WHERE p.id = ?";
 
         try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, userId);  // Set the first userId for heart checking
-            stmt.setString(2, userId);  // Set the second userId for bookmark checking
-            stmt.setString(3, postId);  // Set the postId
-
+            stmt.setString(1, userId);  // For hearted check
+            stmt.setString(2, userId);  // For bookmarked check
+            stmt.setString(3, postId);  // Fetch post by postId
             ResultSet rs = stmt.executeQuery();
-
+            System.out.println(" Fetching post for postId: " + postId + " using userId: " + userId);
             if (rs.next()) {
                 User user = new User(rs.getString("userId"), rs.getString("firstName"), rs.getString("lastName"));
+
                 post = new Post(
                         rs.getString("id"),
                         rs.getString("content"),
@@ -203,40 +224,12 @@ public class PostService {
                         rs.getBoolean("isBookmarked")
                 );
             }
+
         } catch (SQLException e) {
-            throw new RuntimeException("Error fetching post by id", e);
+            throw new RuntimeException("Error fetching post by ID", e);
         }
 
         return post;
-    }
-
-    public List<Comment> getCommentsForPost(String postId) {
-        List<Comment> comments = new ArrayList<>();
-        String sql = "SELECT c.commentId, c.commentText, c.commentDate, c.postId, u.userId, u.username, u.firstName, u.lastName "
-                + "FROM comment c "
-                + "JOIN user u ON c.userId = u.userId "
-                + "WHERE c.postId = ?";
-
-        try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, postId);
-            ResultSet rs = stmt.executeQuery();
-
-            while (rs.next()) {
-                User user = new User(rs.getString("userId"), rs.getString("firstName"), rs.getString("lastName"));
-                Comment comment = new Comment(
-                        rs.getString("commentId"),
-                        rs.getString("commentText"),
-                        rs.getString("createdDate"),
-                        user
-                );
-                comments.add(comment);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error fetching comments for post", e);
-        }
-
-        return comments;
     }
 
     /**
