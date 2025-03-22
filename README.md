@@ -5,18 +5,27 @@ Group: 4 Members: Khushi Bhatamrekar, Aditi Chiluguri, Catherine Chu, Grace Ryoo
 Contributions:
 
 Khushi Bhatamrekar:
+- people page
+- hashtag search
+- recorded demo video
 
 Aditi Chiluguri:
+- home page
+- posts
 
 Catherine Chu:
+- post features
+- recorded demo video
 
 Grace Ryoo:
+- profile page
+- bookmark page
 
 How to run:
 
 Start the MySQL docker container and get the mysql prompt.
 
-Create the database and run all dqml statements given in the database_setup.sql file. This is needed only if this is the first time running the web app.
+Create the database and run all dml statements given in the database_setup.sql file. This is needed only if this is the first time running the web app.
 
 Navigate to the directory with the pom.xml using the terminal in your local machine and run the following command:
 On unix like machines:
