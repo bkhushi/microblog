@@ -106,11 +106,11 @@ public class PostService {
      * automatically extracted and linked.
      */
     public boolean createPost(String content, String userId) {
-        /* 
-        User loggedInUser = userService.getLoggedInUser();
-        if (loggedInUser == null) {
-            throw new RuntimeException("User is not authenticated.");
-        }
+        /*
+         * User loggedInUser = userService.getLoggedInUser();
+         * if (loggedInUser == null) {
+         * throw new RuntimeException("User is not authenticated.");
+         * }
          */
         if (userId == null || userId.isEmpty()) {
             throw new RuntimeException("User ID is required to create a post.");
@@ -121,7 +121,7 @@ public class PostService {
         try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, content);
             pstmt.setString(2, userId);
-            //pstmt.setString(2, userId);
+            // pstmt.setString(2, userId);
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0;
         } catch (SQLException e) {
@@ -135,43 +135,53 @@ public class PostService {
     public List<Post> getPostsFromFollowedUsers(String userId) {
         List<Post> posts = new ArrayList<>();
 
-        String sql = "SELECT p.id, p.content, p.created_at, u.userId, u.username, u.firstName, u.lastName, "
-                + "(SELECT COUNT(*) FROM heart h WHERE h.postId = p.id) AS heartsCount, "
-                + "(SELECT COUNT(*) FROM comment c WHERE c.postId = p.id) AS commentsCount, "
-                + "EXISTS (SELECT 1 FROM heart h WHERE h.postId = p.id AND h.userId = ?) AS isHearted, "
-                + "EXISTS (SELECT 1 FROM bookmark b WHERE b.postId = p.id AND b.userId = ?) AS isBookmarked "
-                + "FROM post p "
-                + "JOIN user u ON p.id = u.userId "
-                + "JOIN follow f ON p.id = f.following_id "
-                + "WHERE f.follower_id = ? "
-                + "ORDER BY p.created_at DESC";
+        String sql = "SELECT p.id, p.content, p.created_at, " +
+                "u.userId, u.username, u.firstName, u.lastName, " +
+                "(SELECT COUNT(*) FROM heart h WHERE h.postId = p.id) as hearts_count, " +
+                "(SELECT COUNT(*) FROM comment c WHERE c.postId = p.id) as comments_count, " +
+                "EXISTS(SELECT 1 FROM heart h WHERE h.postId = p.id AND h.userId = ?) as is_hearted, " +
+                "EXISTS(SELECT 1 FROM bookmark b WHERE b.postId = p.id AND b.userId = ?) as is_bookmarked " +
+                "FROM post p " +
+                "JOIN user u ON p.user_id = u.userId " +
+                "WHERE p.user_id IN ( " +
+                "    SELECT following_id FROM follow WHERE follower_id = ? " +
+                "    UNION " +
+                "    SELECT ? " + // Include posts from the logged-in user
+                ") " +
+                "ORDER BY p.created_at DESC";
 
-        try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, userId); // For isHearted check
-            stmt.setString(2, userId); // For isBookmarked check
-            stmt.setString(3, userId); // For fetching posts
-            ResultSet rs = stmt.executeQuery();
+            stmt.setString(1, userId); // For is_hearted check
+            stmt.setString(2, userId); // For is_bookmarked check
+            stmt.setString(3, userId); // For followed users
+            stmt.setString(4, userId); // For self posts
 
-            while (rs.next()) {
-                System.out.println("Columns in result: " + rs.getString("id"));
-                User user = new User(rs.getString("userId"), rs.getString("firstName"), rs.getString("lastName"));
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    User user = new User(
+                            rs.getString("userId"),
+                            rs.getString("firstName"),
+                            rs.getString("lastName"));
 
-                Post post = new Post(
-                        rs.getString("id"),
-                        rs.getString("content"),
-                        rs.getTimestamp("created_at").toLocalDateTime().format(DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a")),
-                        user,
-                        rs.getInt("heartsCount"),
-                        rs.getInt("commentsCount"),
-                        rs.getBoolean("isHearted"),
-                        rs.getBoolean("isBookmarked")
-                );
-                posts.add(post);
+                    Post post = new Post(
+                            rs.getString("id"),
+                            rs.getString("content"),
+                            rs.getTimestamp("created_at").toLocalDateTime()
+                                    .format(DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a")),
+                            user,
+                            rs.getInt("hearts_count"),
+                            rs.getInt("comments_count"),
+                            rs.getBoolean("is_hearted"),
+                            rs.getBoolean("is_bookmarked"));
+                    posts.add(post);
+                }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error fetching posts", e);
+            throw new RuntimeException("Error fetching posts from followed users: " + e.getMessage(), e);
         }
+
         return posts;
     }
 
@@ -189,8 +199,7 @@ public class PostService {
                 commentsForPost.size(),
                 post.getHearted(),
                 post.isBookmarked(),
-                commentsForPost
-        ));
+                commentsForPost));
     }
 
     public Post getPostById(String postId, String userId) {
@@ -206,9 +215,9 @@ public class PostService {
                 + "WHERE p.id = ?";
 
         try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, userId);  // For hearted check
-            stmt.setString(2, userId);  // For bookmarked check
-            stmt.setString(3, postId);  // Fetch post by postId
+            stmt.setString(1, userId); // For hearted check
+            stmt.setString(2, userId); // For bookmarked check
+            stmt.setString(3, postId); // Fetch post by postId
             ResultSet rs = stmt.executeQuery();
             System.out.println(" Fetching post for postId: " + postId + " using userId: " + userId);
             if (rs.next()) {
@@ -222,8 +231,7 @@ public class PostService {
                         rs.getInt("heartsCount"),
                         rs.getInt("commentsCount"),
                         rs.getBoolean("isHearted"),
-                        rs.getBoolean("isBookmarked")
-                );
+                        rs.getBoolean("isBookmarked"));
             }
 
         } catch (SQLException e) {
@@ -239,91 +247,95 @@ public class PostService {
      * @param hashtags List of hashtags to search for.
      * @return List of matching posts.
      */
-    /* public List<Post> getPostsByHashtags(List<String> hashtags) {
-        List<Post> posts = new ArrayList<>();
-        
-        String query = "SELECT DISTINCT p.*, u.userId, u.firstName, u.lastName " +
-                "FROM post p " +
-                "JOIN user u ON p.user_id = u.userId " +
-                "JOIN post_hashtag ph ON p.id = ph.post_id " +
-                "JOIN hashtag h ON ph.hashtag_id = h.id " +
-                "WHERE h.tag IN (" + String.join(",", hashtags) + ") " +
-                "ORDER BY p.created_at DESC";
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            for (int i = 0; i < hashtags.size(); i++) {
-                stmt.setString(i + 1, hashtags.get(i));
-            }
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    User user = new User(rs.getString("userId"), rs.getString("firstName"), rs.getString("lastName"));
-                    Post post = new Post(
-                            rs.getString("id"),
-                            rs.getString("content"),
-                            rs.getString("created_at"),
-                            user,
-                            rs.getInt("hearts_count"),
-                            rs.getInt("comments_count"),
-                            rs.getBoolean("is_hearted"),
-                            rs.getBoolean("is_bookmarked")
-                    );
-                    posts.add(post);
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error fetching posts by hashtags", e);
-        }
-        return posts;
-    } */
+    /*
+     * public List<Post> getPostsByHashtags(List<String> hashtags) {
+     * List<Post> posts = new ArrayList<>();
+     * 
+     * String query = "SELECT DISTINCT p.*, u.userId, u.firstName, u.lastName " +
+     * "FROM post p " +
+     * "JOIN user u ON p.user_id = u.userId " +
+     * "JOIN post_hashtag ph ON p.id = ph.post_id " +
+     * "JOIN hashtag h ON ph.hashtag_id = h.id " +
+     * "WHERE h.tag IN (" + String.join(",", hashtags) + ") " +
+     * "ORDER BY p.created_at DESC";
+     * 
+     * try (Connection conn = dataSource.getConnection();
+     * PreparedStatement stmt = conn.prepareStatement(query)) {
+     * for (int i = 0; i < hashtags.size(); i++) {
+     * stmt.setString(i + 1, hashtags.get(i));
+     * }
+     * 
+     * try (ResultSet rs = stmt.executeQuery()) {
+     * while (rs.next()) {
+     * User user = new User(rs.getString("userId"), rs.getString("firstName"),
+     * rs.getString("lastName"));
+     * Post post = new Post(
+     * rs.getString("id"),
+     * rs.getString("content"),
+     * rs.getString("created_at"),
+     * user,
+     * rs.getInt("hearts_count"),
+     * rs.getInt("comments_count"),
+     * rs.getBoolean("is_hearted"),
+     * rs.getBoolean("is_bookmarked")
+     * );
+     * posts.add(post);
+     * }
+     * }
+     * } catch (SQLException e) {
+     * throw new RuntimeException("Error fetching posts by hashtags", e);
+     * }
+     * return posts;
+     * }
+     */
     /**
      * Retrieves posts from users that the logged-in user follows.
      *
      * @return List of posts ordered from most recent to oldest.
      */
-    /* public List<Post> getPostsFromFollowedUsers(String userId) {
-        List<Post> posts = new ArrayList<>();
-    
-        String sql = "SELECT p.*, u.username, u.firstName, u.lastName " +
-                     "FROM post p " +
-                     "JOIN user u ON p.user_id = u.userId " +
-                     "LEFT JOIN follow f ON p.user_id = f.following_id AND f.follower_id = ? " +
-                     "WHERE f.follower_id IS NOT NULL OR p.user_id = ? " + // Include self-posts
-                     "ORDER BY p.created_at DESC";
-    
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-    
-            pstmt.setString(1, userId); // First param: followed users
-            pstmt.setString(2, userId); // Second param: self-posts
-    
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    User user = new User(
-                        rs.getString("user_id"),
-                        rs.getString("firstName"),
-                        rs.getString("lastName")
-                    );
-    
-                    Post post = new Post(
-                        rs.getString("id"),
-                        rs.getString("content"),
-                        rs.getString("created_at"),
-                        user,
-                        rs.getInt("hearts_count"),
-                        rs.getInt("comments_count"),
-                        rs.getBoolean("is_hearted"),
-                        rs.getBoolean("is_bookmarked")
-                    );
-                    posts.add(post);
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error fetching posts from followed users", e);
-        }
-    
-        return posts;
-    }
+    /*
+     * public List<Post> getPostsFromFollowedUsers(String userId) {
+     * List<Post> posts = new ArrayList<>();
+     * 
+     * String sql = "SELECT p.*, u.username, u.firstName, u.lastName " +
+     * "FROM post p " +
+     * "JOIN user u ON p.user_id = u.userId " +
+     * "LEFT JOIN follow f ON p.user_id = f.following_id AND f.follower_id = ? " +
+     * "WHERE f.follower_id IS NOT NULL OR p.user_id = ? " + // Include self-posts
+     * "ORDER BY p.created_at DESC";
+     * 
+     * try (Connection conn = dataSource.getConnection();
+     * PreparedStatement pstmt = conn.prepareStatement(sql)) {
+     * 
+     * pstmt.setString(1, userId); // First param: followed users
+     * pstmt.setString(2, userId); // Second param: self-posts
+     * 
+     * try (ResultSet rs = pstmt.executeQuery()) {
+     * while (rs.next()) {
+     * User user = new User(
+     * rs.getString("user_id"),
+     * rs.getString("firstName"),
+     * rs.getString("lastName")
+     * );
+     * 
+     * Post post = new Post(
+     * rs.getString("id"),
+     * rs.getString("content"),
+     * rs.getString("created_at"),
+     * user,
+     * rs.getInt("hearts_count"),
+     * rs.getInt("comments_count"),
+     * rs.getBoolean("is_hearted"),
+     * rs.getBoolean("is_bookmarked")
+     * );
+     * posts.add(post);
+     * }
+     * }
+     * } catch (SQLException e) {
+     * throw new RuntimeException("Error fetching posts from followed users", e);
+     * }
+     * 
+     * return posts;
+     * }
      */
 }
