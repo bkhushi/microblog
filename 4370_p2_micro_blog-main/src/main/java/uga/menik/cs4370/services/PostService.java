@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -156,7 +157,7 @@ public class PostService {
                 Post post = new Post(
                         rs.getString("id"),
                         rs.getString("content"),
-                        rs.getString("created_at"),
+                        rs.getTimestamp("created_at").toLocalDateTime().format(DateTimeFormatter.ofPattern("MMM dd, yyyy, hh:mm a")),
                         user,
                         rs.getInt("heartsCount"),
                         rs.getInt("commentsCount"),
