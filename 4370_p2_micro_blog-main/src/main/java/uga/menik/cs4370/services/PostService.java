@@ -2,12 +2,18 @@ package uga.menik.cs4370.services;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import uga.menik.cs4370.models.Post;
+import uga.menik.cs4370.models.User;
 
 @Service
 public class PostService {
@@ -16,8 +22,9 @@ public class PostService {
     private DataSource dataSource;
     private UserService userService;
 
-    public PostService(DataSource dataSource) {
+    public PostService(DataSource dataSource, UserService userService) {
         this.dataSource = dataSource;
+        this.userService = userService;
     }
 
     public void likePost(String userId, String postId) {
@@ -115,6 +122,52 @@ public class PostService {
         } catch (SQLException e) {
             throw new RuntimeException("Error creating post", e);
         }
+    }
+
+    /**
+     * Fetches post from users that the logged-in user follows
+     */
+    public List<Post> getPostsFromFollowedUsers(String userId) {
+        List<Post> posts = new ArrayList<>();
+
+        String sql = "SELECT p.id, p.content, p.created_at, u.userId, u.username, u.firstName, u.lastName, "
+                + "(SELECT COUNT(*) FROM heart h WHERE h.postId = p.id) AS heartsCount, "
+                + "(SELECT COUNT(*) FROM comment c WHERE c.postId = p.id) AS commentsCount, "
+                + "EXISTS (SELECT 1 FROM heart h WHERE h.postId = p.id AND h.userId = ?) AS isHearted, "
+                + "EXISTS (SELECT 1 FROM bookmark b WHERE b.postId = p.id AND b.userId = ?) AS isBookmarked "
+                + "FROM post p "
+                + "JOIN user u ON p.id = u.userId "
+                + "JOIN follow f ON p.id = f.following_id "
+                + "WHERE f.follower_id = ? "
+                + "ORDER BY p.created_at DESC";
+
+        try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, userId); // For isHearted check
+            stmt.setString(2, userId); // For isBookmarked check
+            stmt.setString(3, userId); // For fetching posts
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+            System.out.println("Columns in result: " + rs.getString("id"));
+                User user = new User(rs.getString("userId"), rs.getString("firstName"), rs.getString("lastName"));
+
+                Post post = new Post(
+                        rs.getString("id"),
+                        rs.getString("content"),
+                        rs.getString("created_at"),
+                        user,
+                        rs.getInt("heartsCount"),
+                        rs.getInt("commentsCount"),
+                        rs.getBoolean("isHearted"),
+                        rs.getBoolean("isBookmarked")
+                );
+                posts.add(post);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching posts", e);
+        }
+        return posts;
     }
 
     /**

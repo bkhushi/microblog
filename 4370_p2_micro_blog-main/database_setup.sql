@@ -124,3 +124,4 @@ CREATE TABLE bookmark (
     CONSTRAINT fk_bookmark_post FOREIGN KEY (postId) REFERENCES post(id) ON DELETE CASCADE,
     CONSTRAINT fk_bookmark_user FOREIGN KEY (userId) REFERENCES user(userId) ON DELETE CASCADE
 );
+
