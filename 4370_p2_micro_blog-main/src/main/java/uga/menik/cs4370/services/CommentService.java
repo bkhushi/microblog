@@ -4,14 +4,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 
 import javax.sql.DataSource;
 
@@ -35,7 +35,7 @@ public class CommentService {
                 + "FROM comment c "
                 + "JOIN user u ON c.userId = u.userId "
                 + "WHERE c.postId = ? "
-                + "ORDER BY c.commentDate DESC";
+                + "ORDER BY c.commentDate ASC";
 
         try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
