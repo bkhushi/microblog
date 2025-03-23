@@ -5,8 +5,6 @@
  */
 package uga.menik.cs4370.controllers;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -99,36 +97,19 @@ public class HomeController {
     public String createPost(@RequestParam(name = "posttext") String postText) {
         System.out.println("User is creating post: " + postText);
 
-        // Get the current logged-in user ID
-        //User loggedInUser = userService.getLoggedInUser();
-        //if (loggedInUser == null) {
-        //    String message = URLEncoder.encode("User is not authenticated.", StandardCharsets.UTF_8);
-        //  return "redirect:/?error=" + message;
-        //}
         String currentUserId = userService.getLoggedInUser().getUserId();
+
+        if (postText == null || postText.trim().isEmpty()) {
+            return "redirect:/?error=Post cannot be empty";
+        }
+
         boolean success = postService.createPost(postText, currentUserId);
 
-        if (success) {
-            return "redirect:/"; // Redirect ensures all posts are shown
+        if (!success) {
+            return "redirect:/?error=Failed to create the post. Please try again.";
         }
 
-        // Redirect the user with an error message if there was an error.
-        String message = URLEncoder.encode("Failed to create the post. Please try again.", StandardCharsets.UTF_8);
-        return "redirect:/?error=" + message;
-
-
-        /*
-      // Redirect the user if the post creation is a success.
-        // return "redirect:/";
-        boolean success = postService.createPost(postText);
-        if (success) {
-            List<Post> posts = postService.getPostsFromFollowedUsers("CURRENT_USER_ID");
-            return "redirect:/";
-            //return posts;
-        }
-         */
-        // Redirect the user with an error message if there was an error.
-        //String message = URLEncoder.encode("Failed to create the post. Please try again.", StandardCharsets.UTF_8);
-        //return "redirect:/?error=" + message;
+        return "redirect:/";
     }
+
 }

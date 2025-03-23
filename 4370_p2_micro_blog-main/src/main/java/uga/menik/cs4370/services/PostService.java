@@ -119,6 +119,10 @@ public class PostService {
             throw new RuntimeException("User ID is required to create a post.");
         }
 
+        if (content == null || content.trim().isEmpty()) {
+            throw new RuntimeException("Post content cannot be empty.");
+        }
+        
         final String sql = "INSERT INTO post (content, user_id) VALUES (?, ?)";
 
         try (Connection conn = dataSource.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -138,23 +142,23 @@ public class PostService {
     public List<Post> getPostsFromFollowedUsers(String userId) {
         List<Post> posts = new ArrayList<>();
 
-        String sql = "SELECT p.id, p.content, p.created_at, " +
-                "u.userId, u.username, u.firstName, u.lastName, " +
-                "(SELECT COUNT(*) FROM heart h WHERE h.postId = p.id) as hearts_count, " +
-                "(SELECT COUNT(*) FROM comment c WHERE c.postId = p.id) as comments_count, " +
-                "EXISTS(SELECT 1 FROM heart h WHERE h.postId = p.id AND h.userId = ?) as is_hearted, " +
-                "EXISTS(SELECT 1 FROM bookmark b WHERE b.postId = p.id AND b.userId = ?) as is_bookmarked " +
-                "FROM post p " +
-                "JOIN user u ON p.user_id = u.userId " +
-                "WHERE p.user_id IN ( " +
-                "    SELECT following_id FROM follow WHERE follower_id = ? " +
-                "    UNION " +
-                "    SELECT ? " + // Include posts from the logged-in user
-                ") " +
-                "ORDER BY p.created_at DESC";
+        String sql = "SELECT p.id, p.content, p.created_at, "
+                + "u.userId, u.username, u.firstName, u.lastName, "
+                + "(SELECT COUNT(*) FROM heart h WHERE h.postId = p.id) as hearts_count, "
+                + "(SELECT COUNT(*) FROM comment c WHERE c.postId = p.id) as comments_count, "
+                + "EXISTS(SELECT 1 FROM heart h WHERE h.postId = p.id AND h.userId = ?) as is_hearted, "
+                + "EXISTS(SELECT 1 FROM bookmark b WHERE b.postId = p.id AND b.userId = ?) as is_bookmarked "
+                + "FROM post p "
+                + "JOIN user u ON p.user_id = u.userId "
+                + "WHERE p.user_id IN ( "
+                + "    SELECT following_id FROM follow WHERE follower_id = ? "
+                + "    UNION "
+                + "    SELECT ? "
+                + // Include posts from the logged-in user
+                ") "
+                + "ORDER BY p.created_at DESC";
 
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, userId); // For is_hearted check
             stmt.setString(2, userId); // For is_bookmarked check
@@ -167,8 +171,7 @@ public class PostService {
                             rs.getString("userId"),
                             rs.getString("firstName"),
                             rs.getString("lastName"));
-                    
-                    
+
                     Post post = new Post(
                             rs.getString("id"),
                             rs.getString("content"),
@@ -192,7 +195,7 @@ public class PostService {
         String currUserId = userService.getLoggedInUser().getUserId();
         Post post = getPostById(postId, currUserId);
         List<Comment> commentsForPost = commentService.getCommentsForPost(postId);
-        
+
         return List.of(new ExpandedPost(
                 post.getPostId(),
                 post.getContent(),
@@ -253,7 +256,6 @@ public class PostService {
 
         return estZoned.format(outputFormatter);
     }
-
 
     /**
      * Retrieves posts containing specified hashtags.

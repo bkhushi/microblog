@@ -8,7 +8,7 @@ Khushi Bhatamrekar:
 
 Aditi Chiluguri:
 
-Catherine Chu: Implemented features of post interactions, including liking, unliking, bookmarking, and adding comments. Enhanced the home page to display posts from followed users. Developed the expanded post view to provide a detailed display of individual posts and associated interactions.
+Catherine Chu: Implemented features of post interactions, including liking, unliking, bookmarking, and adding comments. Enhanced the home page to display posts from followed users. Developed the expanded post view to provide a detailed display of individual posts and associated interactions. Made sure posts cannot be empty and displayed an error message. 
 
 Grace Ryoo:
 
