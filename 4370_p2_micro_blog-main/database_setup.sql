@@ -69,3 +69,35 @@ CREATE TABLE bookmark (
     CONSTRAINT fk_bookmark_user FOREIGN KEY (userId) REFERENCES user(userId) ON DELETE CASCADE
 );
 
+-- Insert sample users
+INSERT INTO user (username, password, firstName, lastName) VALUES
+('john_doe', 'password123', 'John', 'Doe'),
+('jane_smith', 'password123', 'Jane', 'Smith'),
+('bob_jones', 'password123', 'Bob', 'Jones'),
+('alice_wonder', 'password123', 'Alice', 'Wonder');
+
+-- Insert sample posts
+INSERT INTO post (content, user_id, created_at) VALUES
+('Excited about my #first post! #hello', 1, '2025-03-07 22:54:00'),
+('Learning #java and loving it! #coding', 2, '2025-03-07 23:00:00'),
+('Beautiful #sunset today! #photography', 3, '2025-03-08 18:30:00'),
+('Working on a new #project using #java', 1, '2025-03-08 20:15:00');
+
+-- Insert sample follows
+INSERT INTO follow (follower_id, following_id) VALUES
+(1, 2), (1, 3), (2, 1), (3, 1), (4, 1), (4, 2);
+
+-- Insert sample comments
+INSERT INTO comment (postId, userId, commentText, commentDate) VALUES
+(1, 2, 'Welcome to the platform!', '2025-03-07 23:00:00'),
+(2, 1, 'Java is great!', '2025-03-08 10:00:00'),
+(3, 4, 'Beautiful picture!', '2025-03-08 19:00:00');
+
+-- Insert sample hearts
+INSERT INTO heart (postId, userId) VALUES
+(1, 2), (1, 3), (2, 1), (3, 1), (3, 2);
+
+-- Insert sample bookmarks
+INSERT INTO bookmark (postId, userId) VALUES
+(1, 2), (2, 1), (3, 4);
+

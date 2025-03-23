@@ -10,6 +10,8 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 
 import javax.sql.DataSource;
 
@@ -32,15 +34,26 @@ public class CommentService {
         String sql = "SELECT c.commentId, c.commentText, c.commentDate, c.postId, u.userId, u.username, u.firstName, u.lastName "
                 + "FROM comment c "
                 + "JOIN user u ON c.userId = u.userId "
-                + "WHERE c.postId = ?";
+                + "WHERE c.postId = ? "
+                + "ORDER BY c.commentDate DESC";
 
         try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, postId);
             ResultSet rs = stmt.executeQuery();
 
+            SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy, hh:mm a");
+
             while (rs.next()) {
                 User user = new User(rs.getString("userId"), rs.getString("firstName"), rs.getString("lastName"));
+
+                // Format the date
+                String formattedDate = "Never";
+                Timestamp timestamp = rs.getTimestamp("commentDate");
+                if (timestamp != null) {
+                    formattedDate = sdf.format(timestamp);
+                }
+
                 Comment comment = new Comment(
                         rs.getString("commentId"),
                         rs.getString("commentText"),
